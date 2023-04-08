@@ -1,7 +1,25 @@
+import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import { fileURLToPath } from 'url';
+
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default {
+  entry: './src/index.js',
   mode: process.env.NODE_ENV || 'development',
+  output: {
+    path: path.resolve(dirname, 'dist'),
+  },
+  devServer: {
+    port: 9000,
+    open: true,
+    host: 'localhost',
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: 'index.html',
+    })
+  ],
   module: {
     rules: [
       {
@@ -28,13 +46,5 @@ export default {
         use: 'file-loader',
       },
     ],
-  },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: 'index.html',
-    }),
-  ],
-  output: {
-    clean: true,
   },
 };
