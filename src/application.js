@@ -1,5 +1,9 @@
 import * as yup from 'yup';
+<<<<<<< HEAD
 import viewer from './view.js';
+=======
+import viewer from './view';
+>>>>>>> refs/remotes/origin/main
 
 const isValid = (data, state) => {
   const schema = yup.object().shape({
