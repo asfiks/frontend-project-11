@@ -1,5 +1,14 @@
 import * as yup from 'yup';
 import viewer from './view.js';
+import i18next from 'i18next';
+import texts from './locales/texts.js'
+
+i18next.init({
+  lng: 'ru',
+  resources: {
+    ru: { translation: texts }
+  }
+});
 
 const isValid = (data, state) => {
   const schema = yup.object().shape({
@@ -15,11 +24,12 @@ const isValid = (data, state) => {
 };
 
 const render = (state) => {
+
   const section = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = section.querySelector('.text-danger');
   if (state.valid === false) {
-    elementFeedback.textContent = 'Ссылка должна быть валидным URL';
+    elementFeedback.textContent = i18next.t('noValid');
     elementInput.classList.add('is-invalid');
   }
   if (state.valid === true) {
