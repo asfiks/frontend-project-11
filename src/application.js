@@ -3,6 +3,7 @@ import viewer from './view.js';
 import i18next from 'i18next';
 import texts from './locales/texts.js'
 import axios from 'axios';
+import parser from './parser.js'
 
 
 i18next.init({
@@ -23,7 +24,7 @@ const getRSS = (url) => {
   const proxyUrl = makeProxyLink(url)
   return axios.get(proxyUrl)
    .then(response => {
-     console.log(response.data);
+      return response.data.contents;
   })
     .catch (error => {
       console.log(error)
@@ -33,9 +34,10 @@ const getRSS = (url) => {
 const isValid = (data, state, schema) => {
   return schema.validate({ website: data })
     .then(() => {
-      state.valid = true;
       state.value = data;
-    })
+      state.valid = true;
+      
+   })
     .catch(() => {
       state.valid = false;
     });
@@ -54,8 +56,11 @@ const render = (state) => {
     elementFeedback.textContent = '';
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
-    //state.valid = null;
-    getRSS('https://ru.hexlet.io/lessons.rss')
+    state.valid = null;
+    const content = getRSS(state.value);
+    console.log(content)
+    const xmlParse = parser(content);
+    console.log(xmlParse);
   }
 };
 
