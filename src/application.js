@@ -12,23 +12,29 @@ i18next.init({
   }
 });
 
+const makeProxyLink = (url) => {
+  const proxy = new URL('/get', 'https://allorigins.hexlet.app');
+  proxy.searchParams.set('url', url);
+  proxy.searchParams.set('disableCache', true);
+  return proxy;
+};
+
 const getRSS = (url) => {
-  return axios.get(url)
-    .then(response => {
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(response.data, 'application/xml');
-      console.log(xml)
-      return xml;
-      })
-    .catch(error => {
-      console.log(error);
-    });
-      
+  const proxyUrl = makeProxyLink(url)
+  return axios.get(proxyUrl)
+   .then(response => {
+     console.log(response.data);
+  })
+    .catch (error => {
+      console.log(error)
+    })     
 }
+
 const isValid = (data, state, schema) => {
   return schema.validate({ website: data })
     .then(() => {
       state.valid = true;
+      state.value = data;
     })
     .catch(() => {
       state.valid = false;
@@ -48,7 +54,7 @@ const render = (state) => {
     elementFeedback.textContent = '';
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
-    state.valid = null;
+    //state.valid = null;
     getRSS('https://ru.hexlet.io/lessons.rss')
   }
 };
