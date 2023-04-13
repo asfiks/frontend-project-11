@@ -24,7 +24,7 @@ const getRSS = (url) => {
   const proxyUrl = makeProxyLink(url)
   return axios.get(proxyUrl)
    .then(response => {
-      return response.data.contents;
+      return parser(response.data.contents);  
   })
     .catch (error => {
       console.log(error)
@@ -36,8 +36,7 @@ const isValid = (data, state, schema) => {
     .then(() => {
       state.value = data;
       state.valid = true;
-      
-   })
+  })
     .catch(() => {
       state.valid = false;
     });
@@ -57,22 +56,23 @@ const render = (state) => {
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
     state.valid = null;
-    const content = getRSS(state.value);
-    console.log(content)
-    const xmlParse = parser(content);
-    console.log(xmlParse);
+    getRSS(state.value).then(data => console.log(data));
+    
   }
 };
 
 export default () => {
   const state = {
-    valid: null,
+    validUrl: {
+      valid: null,
+    },
     value: '',
+    countFeed: 0,
   };
   const schema = yup.object().shape({
     website: yup.string().url(),
   });
-  const watchedState = viewer(state, render);
+  const watchedState = viewer(state.validUrl, render);
   const form = document.querySelector('.rss-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
