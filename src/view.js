@@ -2,7 +2,9 @@ import onChange from 'on-change';
 
 export default (state, cb) => {
   const watchedState = onChange(state, (path, value) => {
-    cb(state);
+    if (path === 'valid') {
+      cb(state);
+    }
   });
   return watchedState;
 };

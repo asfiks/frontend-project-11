@@ -43,7 +43,6 @@ const isValid = (data, state, schema) => {
 };
 
 const render = (state) => {
-  
   const section = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = section.querySelector('.text-danger');
@@ -56,7 +55,16 @@ const render = (state) => {
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
     state.valid = null;
-    getRSS(state.value).then(data => console.log(data));
+    getRSS(state.value).then((data) => {
+      if (data === 'noRSS') {
+        elementFeedback.textContent = i18next.t('noRSS');
+        elementInput.classList.add('is-invalid');
+      } else {
+        (state.dataRSS).push(data);
+        console.log(state.dataRSS.length)
+      }
+    })
+      
     
   }
 };
@@ -67,12 +75,12 @@ export default () => {
       valid: null,
     },
     value: '',
-    countFeed: 0,
+    dataRSS: [],
   };
   const schema = yup.object().shape({
     website: yup.string().url(),
   });
-  const watchedState = viewer(state.validUrl, render);
+  const watchedState = viewer(state, render);
   const form = document.querySelector('.rss-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
