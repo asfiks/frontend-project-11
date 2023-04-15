@@ -1,16 +1,15 @@
 import * as yup from 'yup';
-import viewer from './view.js';
 import i18next from 'i18next';
-import texts from './locales/texts.js'
 import axios from 'axios';
-import parser from './parser.js'
-
+import viewer from './view.js';
+import texts from './locales/texts.js';
+import parser from './parser.js';
 
 i18next.init({
   lng: 'ru',
   resources: {
-    ru: { translation: texts }
-  }
+    ru: { translation: texts },
+  },
 });
 
 const makeProxyLink = (url) => {
@@ -20,34 +19,99 @@ const makeProxyLink = (url) => {
   return proxy;
 };
 
-const getRSS = (url) => {
-  const proxyUrl = makeProxyLink(url)
+const getRSS = (url, state) => {
+  const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
-   .then(response => {
-      return parser(response.data.contents);  
-  })
-    .catch (error => {
-      console.log(error)
-    })     
-}
-
-const isValid = (data, state, schema) => {
-  return schema.validate({ website: data })
-    .then(() => {
-      state.value = data;
-      state.valid = true;
-  })
-    .catch(() => {
-      state.valid = false;
+    .then((response) => parser(response.data.contents, state))
+    .catch((error) => {
+      console.log(error);
     });
 };
 
+const isValid = (data, state, schema) => schema.validate({ website: data })
+  .then(() => {
+    state.value = data;
+    state.valid = true;
+  })
+  .catch(() => {
+    state.valid = false;
+  });
+
+const creatLiForPost = () => {
+  const elementLi = document.createElement('li');
+  elementLi.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+  return elementLi;
+};
+
+const createElementA = (post) => {
+  const elementA = document.createElement('a');
+  elementA.href = post.link;
+  elementA.textContent = post.title;
+  elementA.classList.add('fw-bold');
+  elementA.setAttribute('data-id', post.id);
+  elementA.setAttribute('target', '_blank');
+  elementA.setAttribute('rel', 'noopener noreferrer');
+  return elementA;
+}
+const createButton = (post) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+  button.textContent = i18next.t('button');
+  button.setAttribute('data-id', post.id);
+  button.setAttribute('data-bs-toggle', 'modal');
+  button.setAttribute('data-bs-target', '#modal');
+  return button;
+}
+
+const createPost = (post) => {
+  const liElement = creatLiForPost();
+  liElement.append(createElementA(post));
+  liElement.append(createButton(post));
+  return liElement;
+}
+const createNameLists = (text) => {
+  const container = document.createElement('div');
+  container.classList.add('card', 'border-0');
+  const containerForText = document.createElement('div');
+  containerForText.classList.add('card-body');
+  const elementForText = document.createElement('h2');
+  elementForText.classList.add('card-title', 'h4');
+  elementForText.textContent = text;
+  containerForText.append(elementForText);
+  container.append(containerForText);
+  return container;
+}
+const createListForContent = () => {
+  const elementUl = document.createElement('ul');
+  elementUl.classList.add('list-group', 'border-0', 'rounded-0');
+  return elementUl;
+}
+
+const creatFeeds = (feed) => {
+  const li = document.createElement('li');
+  li.classList.add('list-group-item', 'border-0', 'border-end-0');
+  const h3 = document.createElement('h3');
+  h3.classList.add('h6', 'm-0');
+  h3.innerText = feed.title;
+  const p = document.createElement('p');
+  p.classList.add('m-0', 'small', 'text-black-50');
+  p.innerText = feed.description;
+  li.append(h3)
+  li.append(p)
+  return li;
+}
+
 const render = (state) => {
-  const section = document.querySelector('.bg-dark');
+  const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
-  const elementFeedback = section.querySelector('.text-danger');
+  const elementFeedback = sectionForm.querySelector('.feedback');
+  
+
   if (state.valid === false) {
     elementFeedback.textContent = i18next.t('noValid');
+    elementFeedback.classList.remove('text-success');
+    elementFeedback.classList.add('text-danger')
     elementInput.classList.add('is-invalid');
   }
   if (state.valid === true) {
@@ -55,17 +119,51 @@ const render = (state) => {
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
     state.valid = null;
-    getRSS(state.value).then((data) => {
+    getRSS(state.value, state).then((data) => {
       if (data === 'noRSS') {
         elementFeedback.textContent = i18next.t('noRSS');
+        elementFeedback.classList.remove('text-success');
+        elementFeedback.classList.add('text-danger')
         elementInput.classList.add('is-invalid');
       } else {
         (state.dataRSS).push(data);
-        console.log(state.dataRSS.length)
+        if (state.dataRSS.length === 1) {
+          const containerPosts = document.querySelector('.posts');
+          containerPosts.append(createNameLists(i18next.t('posts')))
+          const containerFeeds = document.querySelector('.feeds');
+          containerFeeds.append(createNameLists(i18next.t('feeds')));
+          const containerWithPosts = containerPosts.querySelector('.card')
+          containerWithPosts.append(createListForContent());
+          const conteinerWithFeeds = containerFeeds.querySelector('.card');
+          conteinerWithFeeds.append(createListForContent());
+        }
+        const containerPosts = document.querySelector('.posts');
+        const containerWithListInPosts = containerPosts.querySelector('ul');
+        const containerFeeds = document.querySelector('.feeds');
+        const containerWithListInFeeds = containerFeeds.querySelector('ul')
+        for (const d of data) {
+          if (d.posts) {
+            for (const post of d.posts) {
+              containerWithListInPosts.prepend(createPost(post));
+            }
+          }
+          if (d.feed) {
+            for (const feed of d.feed) {
+              containerWithListInFeeds.prepend(creatFeeds(feed))
+            }
+          }
+        }
+        elementFeedback.textContent = i18next.t('okRSS');
+        elementFeedback.classList.remove('text-danger');
+        elementFeedback.classList.add('text-success');
+        elementInput.value = '';
+        elementInput.focus();
+
       }
-    })
       
-    
+
+
+    });
   }
 };
 
@@ -75,7 +173,10 @@ export default () => {
       valid: null,
     },
     value: '',
+    idFeed: 0,
+    idPost: 0,
     dataRSS: [],
+
   };
   const schema = yup.object().shape({
     website: yup.string().url(),
@@ -88,4 +189,3 @@ export default () => {
     isValid(inputData, watchedState, schema);
   });
 };
-
