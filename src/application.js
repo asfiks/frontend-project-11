@@ -4,6 +4,7 @@ import axios from 'axios';
 import viewer from './view.js';
 import texts from './locales/texts.js';
 import parser from './parser.js';
+import { hasRSS } from './utilits.js';
 
 i18next.init({
   lng: 'ru',
@@ -22,7 +23,14 @@ const makeProxyLink = (url) => {
 const getRSS = (url, state) => {
   const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
-    .then((response) => parser(response.data.contents, state))
+    .then((response) =>  {
+    if (hasRSS(response.data.contents)) {
+      (state.urls).push(url);
+      return response.data.contents;
+    } else {
+      return 'no rss'
+    }
+  })
     .catch((error) => {
       console.log(error);
     });
@@ -30,12 +38,15 @@ const getRSS = (url, state) => {
 
 const isValid = (data, state, schema) => schema.validate({ website: data })
   .then(() => {
-    state.value = data;
+    state.nowUrl = data;
+    console.log('true url')
     state.valid = true;
+    
   })
   .catch(() => {
+    console.log('no true url')
     state.valid = false;
-  });
+});
 
 const creatLiForPost = () => {
   const elementLi = document.createElement('li');
@@ -106,8 +117,6 @@ const render = (state) => {
   const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = sectionForm.querySelector('.feedback');
-  
-
   if (state.valid === false) {
     elementFeedback.textContent = i18next.t('noValid');
     elementFeedback.classList.remove('text-success');
@@ -115,19 +124,24 @@ const render = (state) => {
     elementInput.classList.add('is-invalid');
   }
   if (state.valid === true) {
+    console.log('render with true')
     elementFeedback.textContent = '';
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
     state.valid = null;
-    getRSS(state.value, state).then((data) => {
-      if (data === 'noRSS') {
-        elementFeedback.textContent = i18next.t('noRSS');
+    getRSS(state.nowUrl, state).then((data) => {
+      if (data === 'no rss') {
         elementFeedback.classList.remove('text-success');
         elementFeedback.classList.add('text-danger')
         elementInput.classList.add('is-invalid');
+        elementFeedback.textContent = i18next.t('noRSS');
       } else {
-        (state.dataRSS).push(data);
-        if (state.dataRSS.length === 1) {
+        const dataAfterParsing = parser(data)
+    
+        (state.dataRSS).push(dataAfterParsing);
+        console.log(state.dataRSS)
+        
+        if ((state.dataRSS).length === 1) {
           const containerPosts = document.querySelector('.posts');
           containerPosts.append(createNameLists(i18next.t('posts')))
           const containerFeeds = document.querySelector('.feeds');
@@ -141,9 +155,13 @@ const render = (state) => {
         const containerWithListInPosts = containerPosts.querySelector('ul');
         const containerFeeds = document.querySelector('.feeds');
         const containerWithListInFeeds = containerFeeds.querySelector('ul')
-        for (const d of data) {
+        console.log(state.dataRSS)
+        return;
+/*         for (const d of state.dataRSS[0]) {
+          console.log(d)
           if (d.posts) {
             for (const post of d.posts) {
+              
               containerWithListInPosts.prepend(createPost(post));
             }
           }
@@ -152,12 +170,12 @@ const render = (state) => {
               containerWithListInFeeds.prepend(creatFeeds(feed))
             }
           }
-        }
+        } 
         elementFeedback.textContent = i18next.t('okRSS');
         elementFeedback.classList.remove('text-danger');
         elementFeedback.classList.add('text-success');
         elementInput.value = '';
-        elementInput.focus();
+        elementInput.focus(); */
 
       }
       
@@ -169,10 +187,9 @@ const render = (state) => {
 
 export default () => {
   const state = {
-    validUrl: {
-      valid: null,
-    },
-    value: '',
+    valid: null,
+    nowUrl: '',
+    urls: [],
     idFeed: 0,
     idPost: 0,
     dataRSS: [],
