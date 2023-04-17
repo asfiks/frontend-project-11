@@ -24,29 +24,41 @@ const getRSS = (url, state) => {
   const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
     .then((response) =>  {
-    if (hasRSS(response.data.contents)) {
       (state.urls).push(url);
       return response.data.contents;
-    } else {
-      return 'no rss'
-    }
   })
     .catch((error) => {
-      console.log(error);
+      throw new Error(error);
     });
 };
 
-const isValid = (data, state, schema) => schema.validate({ website: data })
+const isValid = (url, state, schema) => schema.validate({ website: url })
   .then(() => {
-    state.nowUrl = data;
-    console.log('true url')
-    state.valid = true;
     
-  })
+    if (state.urls.includes(url)) {
+      state.validUrl = 'thereIs';
+    } else {
+      const proxyUrl = makeProxyLink(url);
+      axios.get(proxyUrl).then((response) =>  {
+          if (hasRSS(response.data.contents)) {
+            (state.urls).push(url);
+            state.nowUrl = url;
+            console.log('valid')
+            return state.validUrl = 'valid';
+            
+            
+         } else {
+          console.log('NOrss')
+            return state.validUrl = 'noRSS';
+            
+          }
+       })
+     }
+    
+  })   
   .catch(() => {
-    console.log('no true url')
-    state.valid = false;
-});
+    state.validUrl = 'noValid';
+  });
 
 const creatLiForPost = () => {
   const elementLi = document.createElement('li');
@@ -113,34 +125,36 @@ const creatFeeds = (feed) => {
   return li;
 }
 
+const getTextDanger = (elementFeedback, elementInput, text) => {
+  elementFeedback.textContent = text;
+  elementFeedback.classList.remove('text-success');
+  elementFeedback.classList.add('text-danger')
+  elementInput.classList.add('is-invalid');
+}
 const render = (state) => {
   const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = sectionForm.querySelector('.feedback');
-  if (state.valid === false) {
-    elementFeedback.textContent = i18next.t('noValid');
-    elementFeedback.classList.remove('text-success');
-    elementFeedback.classList.add('text-danger')
-    elementInput.classList.add('is-invalid');
+  if (state.validUrl === 'noRSS') {
+    getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'))
   }
-  if (state.valid === true) {
-    console.log('render with true')
+  if (state.validUrl === 'thereIs') {
+    getTextDanger(elementFeedback, elementInput, i18next.t('thereIsRss'));
+  }
+  if (state.validUrl === 'noValid') {
+    getTextDanger(elementFeedback, elementInput, i18next.t('noValid'));
+  }
+  if (state.validUrl === 'valid') {
     elementFeedback.textContent = '';
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
-    state.valid = null;
+    //state.validUrl = '';
     getRSS(state.nowUrl, state).then((data) => {
-      if (data === 'no rss') {
-        elementFeedback.classList.remove('text-success');
-        elementFeedback.classList.add('text-danger')
-        elementInput.classList.add('is-invalid');
-        elementFeedback.textContent = i18next.t('noRSS');
-      } else {
-        const dataAfterParsing = parser(data)
-    
-        (state.dataRSS).push(dataAfterParsing);
-        console.log(state.dataRSS)
-        
+             
+        const dataAfterParsing = parser(data);
+        const dataForState = {}
+        dataForState[state.nowUrl] = dataAfterParsing;
+        state.dataRSS.push(dataForState);
         if ((state.dataRSS).length === 1) {
           const containerPosts = document.querySelector('.posts');
           containerPosts.append(createNameLists(i18next.t('posts')))
@@ -155,8 +169,8 @@ const render = (state) => {
         const containerWithListInPosts = containerPosts.querySelector('ul');
         const containerFeeds = document.querySelector('.feeds');
         const containerWithListInFeeds = containerFeeds.querySelector('ul')
-        console.log(state.dataRSS)
-        return;
+        
+        
 /*         for (const d of state.dataRSS[0]) {
           console.log(d)
           if (d.posts) {
@@ -177,17 +191,19 @@ const render = (state) => {
         elementInput.value = '';
         elementInput.focus(); */
 
-      }
+      
       
 
 
     });
+    
   }
 };
 
 export default () => {
   const state = {
-    valid: null,
+    stateApp: '',
+    validUrl: '',
     nowUrl: '',
     urls: [],
     idFeed: 0,

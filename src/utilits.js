@@ -6,7 +6,6 @@ export const hasRSS = (url) => {
         if (dom.getElementsByTagName('parsererror').length > 0) {
             return false;
         } else {
-            console.log ('has RSS')
             return true;
         }
     } catch {

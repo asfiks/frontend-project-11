@@ -9,11 +9,10 @@ const getDataFromItem = (item) => {
   };
 };
 
-export default (content) => {
+export default (data) => {
   
   try {
-    const dom = parser.parseFromString(content, 'application/xml');
-    console.log(dom)
+    const dom = parser.parseFromString(data, 'application/xml');
     const titleForFeed = dom.querySelector('channel > title').textContent;
     const descriptionForFeed = dom.querySelector('channel > description').textContent;
     const linkForFeed = dom.querySelector('channel > link').textContent;
