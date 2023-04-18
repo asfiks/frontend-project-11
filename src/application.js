@@ -23,10 +23,9 @@ const makeProxyLink = (url) => {
 const getRSS = (url, state) => {
   const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
-    .then((response) =>  {
-      (state.urls).push(url);
-      return response.data.contents;
-  })
+    .then((response) => {
+      return parser(response.data.contents, state);
+    })
     .catch((error) => {
       throw new Error(error);
     });
@@ -34,28 +33,17 @@ const getRSS = (url, state) => {
 
 const isValid = (url, state, schema) => schema.validate({ website: url })
   .then(() => {
-    
     if (state.urls.includes(url)) {
       state.validUrl = 'thereIs';
     } else {
       const proxyUrl = makeProxyLink(url);
-      axios.get(proxyUrl).then((response) =>  {
-          if (hasRSS(response.data.contents)) {
-            (state.urls).push(url);
-            state.nowUrl = url;
-            console.log('valid')
-            return state.validUrl = 'valid';
-            
-            
-         } else {
-          console.log('NOrss')
-            return state.validUrl = 'noRSS';
-            
-          }
-       })
-     }
-    
-  })   
+      if (hasRSS(proxyUrl)) {
+        state.nowUrl = url;
+        return state.validUrl = 'hasRSS';
+      }
+      return state.validUrl = 'noRSS';
+    }
+  })
   .catch(() => {
     state.validUrl = 'noValid';
   });
@@ -75,7 +63,7 @@ const createElementA = (post) => {
   elementA.setAttribute('target', '_blank');
   elementA.setAttribute('rel', 'noopener noreferrer');
   return elementA;
-}
+};
 const createButton = (post) => {
   const button = document.createElement('button');
   button.type = 'button';
@@ -85,14 +73,14 @@ const createButton = (post) => {
   button.setAttribute('data-bs-toggle', 'modal');
   button.setAttribute('data-bs-target', '#modal');
   return button;
-}
+};
 
 const createPost = (post) => {
   const liElement = creatLiForPost();
   liElement.append(createElementA(post));
   liElement.append(createButton(post));
   return liElement;
-}
+};
 const createNameLists = (text) => {
   const container = document.createElement('div');
   container.classList.add('card', 'border-0');
@@ -104,12 +92,12 @@ const createNameLists = (text) => {
   containerForText.append(elementForText);
   container.append(containerForText);
   return container;
-}
+};
 const createListForContent = () => {
   const elementUl = document.createElement('ul');
   elementUl.classList.add('list-group', 'border-0', 'rounded-0');
   return elementUl;
-}
+};
 
 const creatFeeds = (feed) => {
   const li = document.createElement('li');
@@ -120,23 +108,24 @@ const creatFeeds = (feed) => {
   const p = document.createElement('p');
   p.classList.add('m-0', 'small', 'text-black-50');
   p.innerText = feed.description;
-  li.append(h3)
-  li.append(p)
+  li.append(h3);
+  li.append(p);
   return li;
-}
+};
 
 const getTextDanger = (elementFeedback, elementInput, text) => {
   elementFeedback.textContent = text;
   elementFeedback.classList.remove('text-success');
-  elementFeedback.classList.add('text-danger')
+  elementFeedback.classList.add('text-danger');
   elementInput.classList.add('is-invalid');
-}
+};
+
 const render = (state) => {
   const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = sectionForm.querySelector('.feedback');
   if (state.validUrl === 'noRSS') {
-    getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'))
+    getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'));
   }
   if (state.validUrl === 'thereIs') {
     getTextDanger(elementFeedback, elementInput, i18next.t('thereIsRss'));
@@ -144,59 +133,48 @@ const render = (state) => {
   if (state.validUrl === 'noValid') {
     getTextDanger(elementFeedback, elementInput, i18next.t('noValid'));
   }
-  if (state.validUrl === 'valid') {
+  if (state.validUrl === 'hasRSS') {
     elementFeedback.textContent = '';
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
-    //state.validUrl = '';
+    state.validUrl = '';
     getRSS(state.nowUrl, state).then((data) => {
-             
-        const dataAfterParsing = parser(data);
-        const dataForState = {}
-        dataForState[state.nowUrl] = dataAfterParsing;
-        state.dataRSS.push(dataForState);
-        if ((state.dataRSS).length === 1) {
-          const containerPosts = document.querySelector('.posts');
-          containerPosts.append(createNameLists(i18next.t('posts')))
-          const containerFeeds = document.querySelector('.feeds');
-          containerFeeds.append(createNameLists(i18next.t('feeds')));
-          const containerWithPosts = containerPosts.querySelector('.card')
-          containerWithPosts.append(createListForContent());
-          const conteinerWithFeeds = containerFeeds.querySelector('.card');
-          conteinerWithFeeds.append(createListForContent());
-        }
+      const dataAfterParsing = data;
+      const dataForState = {};
+      dataForState[state.nowUrl] = dataAfterParsing;
+      state.dataRSS.push(dataForState);
+      console.log(state.dataRSS)
+      state.urls.push(state.nowUrl)
+      if ((state.dataRSS).length === 1) {
         const containerPosts = document.querySelector('.posts');
-        const containerWithListInPosts = containerPosts.querySelector('ul');
+        containerPosts.append(createNameLists(i18next.t('posts')));
         const containerFeeds = document.querySelector('.feeds');
-        const containerWithListInFeeds = containerFeeds.querySelector('ul')
-        
-        
-/*         for (const d of state.dataRSS[0]) {
-          console.log(d)
-          if (d.posts) {
-            for (const post of d.posts) {
-              
-              containerWithListInPosts.prepend(createPost(post));
-            }
-          }
-          if (d.feed) {
-            for (const feed of d.feed) {
-              containerWithListInFeeds.prepend(creatFeeds(feed))
-            }
-          }
-        } 
-        elementFeedback.textContent = i18next.t('okRSS');
-        elementFeedback.classList.remove('text-danger');
-        elementFeedback.classList.add('text-success');
-        elementInput.value = '';
-        elementInput.focus(); */
-
-      
-      
-
-
+        containerFeeds.append(createNameLists(i18next.t('feeds')));
+        const containerWithPosts = containerPosts.querySelector('.card');
+        containerWithPosts.append(createListForContent());
+        const conteinerWithFeeds = containerFeeds.querySelector('.card');
+        conteinerWithFeeds.append(createListForContent());
+      }
+      const containerPosts = document.querySelector('.posts');
+      const containerWithListInPosts = containerPosts.querySelector('ul');
+      const containerFeeds = document.querySelector('.feeds');
+      const containerWithListInFeeds = containerFeeds.querySelector('ul');
+      const renderData = (containerWithListInPosts, containerWithListInFeeds, dataAfterParsing) => {
+        const [feedOblect, postsObject] = dataAfterParsing;
+        const [feed] = feedOblect.feed;
+        const { posts } = postsObject;
+        containerWithListInFeeds.prepend(creatFeeds(feed));
+        posts.forEach((post) => {
+          containerWithListInPosts.prepend(createPost(post));
+        });
+      };
+      renderData(containerWithListInPosts, containerWithListInFeeds, dataAfterParsing);
+      elementFeedback.textContent = i18next.t('okRSS');
+      elementFeedback.classList.remove('text-danger');
+      elementFeedback.classList.add('text-success');
+      elementInput.value = '';
+      elementInput.focus();
     });
-    
   }
 };
 

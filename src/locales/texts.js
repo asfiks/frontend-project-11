@@ -5,5 +5,5 @@ export default {
   thereIsRss: 'RSS уже существует',
   posts: 'Посты',
   feeds: 'Фиды',
-  button: 'Просмотр'
+  button: 'Просмотр',
 };
