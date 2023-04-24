@@ -143,7 +143,6 @@ const render = (state) => {
       const dataForState = {};
       dataForState[state.nowUrl] = dataAfterParsing;
       state.dataRSS.push(dataForState);
-      console.log(state.dataRSS)
       state.urls.push(state.nowUrl)
       if ((state.dataRSS).length === 1) {
         const containerPosts = document.querySelector('.posts');
@@ -174,13 +173,31 @@ const render = (state) => {
       elementFeedback.classList.add('text-success');
       elementInput.value = '';
       elementInput.focus();
+      console.log(state.dataRSS)
+      console.log(state.urls)
+      state.stateApp = 'isChangeInPosts';
+/*       if (state.stateApp === 'isChangeInPosts') {
+        const hasChange = (state) => {
+          let index = 0;
+          const itIs = () => {
+            const data = state.dataRSS;
+            const urls = state.urls;
+            urls.forEach(url => {
+              data.find
+            })
+            //setTimeout(itIs, 5000)
+          }
+          setTimeout(itIs, 5000)
+        }
+        hasChange(state)
+      } */
     });
   }
 };
 
 export default () => {
   const state = {
-    stateApp: '',
+    stateApp: 'isChangeInPosts',
     validUrl: '',
     nowUrl: '',
     urls: [],
