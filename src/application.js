@@ -38,7 +38,7 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
     } else {
       const proxyUrl = makeProxyLink(url);
       if (hasRSS(proxyUrl)) {
-        state.nowUrl = url;
+        state.currentUrl = url;
         return state.validUrl = 'hasRSS';
       }
       return state.validUrl = 'noRSS';
@@ -138,13 +138,14 @@ const render = (state) => {
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
     state.validUrl = '';
-    getRSS(state.nowUrl, state).then((data) => {
-      const dataAfterParsing = data;
+    getRSS(state.currentUrl, state).then((data) => {
+      const [ feed, posts ] = data;
       const dataForState = {};
-      dataForState[state.nowUrl] = dataAfterParsing;
-      state.dataRSS.push(dataForState);
-      state.urls.push(state.nowUrl)
-      if ((state.dataRSS).length === 1) {
+      dataForState[state.currentUrl] = { feed, posts };
+      state.data.push(dataForState);
+      console.log(state.data)
+      state.urls.push(state.currentUrl)
+      if ((state.data).length === 1) {
         const containerPosts = document.querySelector('.posts');
         containerPosts.append(createNameLists(i18next.t('posts')));
         const containerFeeds = document.querySelector('.feeds');
@@ -158,23 +159,20 @@ const render = (state) => {
       const containerWithListInPosts = containerPosts.querySelector('ul');
       const containerFeeds = document.querySelector('.feeds');
       const containerWithListInFeeds = containerFeeds.querySelector('ul');
-      const renderData = (containerWithListInPosts, containerWithListInFeeds, dataAfterParsing) => {
-        const [feedOblect, postsObject] = dataAfterParsing;
-        const [feed] = feedOblect.feed;
-        const { posts } = postsObject;
+      const renderData = (containerWithListInPosts, containerWithListInFeeds, feed, posts) => {
         containerWithListInFeeds.prepend(creatFeeds(feed));
         posts.forEach((post) => {
           containerWithListInPosts.prepend(createPost(post));
         });
       };
-      renderData(containerWithListInPosts, containerWithListInFeeds, dataAfterParsing);
+      renderData(containerWithListInPosts, containerWithListInFeeds, feed, posts);
       elementFeedback.textContent = i18next.t('okRSS');
       elementFeedback.classList.remove('text-danger');
       elementFeedback.classList.add('text-success');
       elementInput.value = '';
       elementInput.focus();
-      console.log(state.dataRSS)
-      console.log(state.urls)
+      //console.log(state.dataRSS)
+      //console.log(state.urls)
       state.stateApp = 'isChangeInPosts';
 /*       if (state.stateApp === 'isChangeInPosts') {
         const hasChange = (state) => {
@@ -198,8 +196,9 @@ const render = (state) => {
 export default () => {
   const state = {
     stateApp: 'isChangeInPosts',
+    data: [],
     validUrl: '',
-    nowUrl: '',
+    currentUrl: '',
     urls: [],
     idFeed: 0,
     idPost: 0,
