@@ -20,8 +20,6 @@ const makeProxyLink = (url) => {
   return proxy;
 };
 
-
-
 const creatLiForPost = () => {
   const elementLi = document.createElement('li');
   elementLi.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
@@ -94,8 +92,8 @@ const getTextDanger = (elementFeedback, elementInput, text) => {
   elementInput.classList.add('is-invalid');
 };
 
-const getRSS = (state) => {
-  const proxyUrl = makeProxyLink(state.currentUrl);
+const getRSS = (url, state) => {
+  const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
     .then((response) => {
       return parser(response.data.contents, state);
@@ -113,6 +111,7 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
       const proxyUrl = makeProxyLink(url);
       if (hasRSS(proxyUrl)) {
         state.currentUrl = url;
+        state.stateApp = 'filling';
         return state.validUrl = 'hasRSS';
       }
       return state.validUrl = 'noRSS';
@@ -140,7 +139,7 @@ const render = (state) => {
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
     state.validUrl = '';
-    getRSS(state).then((data) => {
+    getRSS(state.currentUrl, state).then((data) => {
       const [ currentFeed, currentPosts ] = data;
       state.feeds.push(currentFeed);
       state.posts.push(...currentPosts);
@@ -183,41 +182,46 @@ const render = (state) => {
       
       allButtonView.forEach(button => {
           button.addEventListener('click', (event) => {
-          
-          const idForPost = Number(event.target.getAttribute('data-id'));
-          const [dataForModal] = state.posts.filter(post => post.id === idForPost);
-          modalTitle.textContent = dataForModal.title;
-          modalBodyWithText.textContent = dataForModal.description;
-          console.log(linkInModal)
-          linkInModal.setAttribute('href', dataForModal.link);
-
-          
-          
+            const idForPost = Number(event.target.getAttribute('data-id'));
+            const [dataForModal] = state.posts.filter(post => post.id === idForPost);
+            modalTitle.textContent = dataForModal.title;
+            modalBodyWithText.textContent = dataForModal.description;
+            linkInModal.setAttribute('href', dataForModal.link);
         })
-     })
-      state.stateApp = 'isChangeInPosts';
-/*       if (state.stateApp === 'isChangeInPosts') {
+     });
+
+    state.stateApp = 'changePosts';
+    if (state.stateApp === 'changePosts') {
         const hasChange = (state) => {
           let index = 0;
           const itIs = () => {
-            const data = state.dataRSS;
             const urls = state.urls;
+            state.posts = [];
+            
             urls.forEach(url => {
-              data.find
+              getRSS(url, state).then((data) => {
+                return state.posts.push(...data)
+              })
             })
-            //setTimeout(itIs, 5000)
+            while (containerWithListInPosts.firstChild) {
+              containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
+            }
+            console.log(state.posts)
+            renderPost(containerWithListInPosts, currentPosts);
+            
+            setTimeout(itIs, 5000)
           }
           setTimeout(itIs, 5000)
         }
         hasChange(state)
-      } */
+      }
     });
   }
 };
 
 export default () => {
   const state = {
-    stateApp: 'isChangeInPosts',
+    stateApp: 'filling',
     feeds: [],
     posts: [],
     validUrl: '',
