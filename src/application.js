@@ -179,24 +179,26 @@ const render = (state) => {
       elementInput.value = '';
       elementInput.focus();
       const allButtonView = containerWithListInPosts.querySelectorAll('button');
-      
-      allButtonView.forEach(button => {
+      const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal ) => {
+        allButtonView.forEach(button => {
           button.addEventListener('click', (event) => {
             const idForPost = Number(event.target.getAttribute('data-id'));
             const [dataForModal] = state.posts.filter(post => post.id === idForPost);
             modalTitle.textContent = dataForModal.title;
             modalBodyWithText.textContent = dataForModal.description;
             linkInModal.setAttribute('href', dataForModal.link);
-        })
-     });
+          })
+        });
+      }
+      renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
+
 
     state.stateApp = 'changePosts';
     if (state.stateApp === 'changePosts') {
-        const hasChange = (state) => {
-          let index = 0;
-          const itIs = () => {
-            const urls = state.urls;
-            state.posts = [];
+        const rebuildData = (state) => {
+          const rebuild = () => {
+          const urls = state.urls;
+          state.posts = [];
             
             urls.forEach(url => {
               getRSS(url, state).then((data) => {
@@ -206,14 +208,14 @@ const render = (state) => {
             while (containerWithListInPosts.firstChild) {
               containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
             }
-            console.log(state.posts)
+            console.log(state)
             renderPost(containerWithListInPosts, currentPosts);
-            
-            setTimeout(itIs, 5000)
+            renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal)
+            setTimeout(rebuild, 5000)
           }
-          setTimeout(itIs, 5000)
+          setTimeout(rebuild, 5000)
         }
-        hasChange(state)
+        rebuildData(state)
       }
     });
   }
