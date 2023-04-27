@@ -86,10 +86,17 @@ const creatFeeds = (feed) => {
 };
 
 const getTextDanger = (elementFeedback, elementInput, text) => {
-  elementFeedback.textContent = text;
-  elementFeedback.classList.remove('text-success');
-  elementFeedback.classList.add('text-danger');
-  elementInput.classList.add('is-invalid');
+  try {
+    //console.log(elementFeedback)
+    elementFeedback.textContent = text;
+    elementFeedback.classList.remove('text-success');
+    elementFeedback.classList.add('text-danger');
+    elementInput.classList.add('is-invalid');
+  } catch (e) {
+    console.log(elementFeedback)
+    console.log(text)
+    console.log(e)
+  }
 };
 
 const getRSS = (url, state) => {
@@ -99,22 +106,26 @@ const getRSS = (url, state) => {
       return parser(response.data.contents, state);
     })
     .catch((error) => {
-      throw new Error(error);
+      console.log(error);
     });
 };
 
 const isValid = (url, state, schema) => schema.validate({ website: url })
   .then(() => {
     if (state.urls.includes(url)) {
-      state.validUrl = 'thereIs';
+      return state.validUrl = 'thereIs';
     } else {
       const proxyUrl = makeProxyLink(url);
-      if (hasRSS(proxyUrl)) {
-        state.currentUrl = url;
-        state.stateApp = 'filling';
-        return state.validUrl = 'hasRSS';
-      }
-      return state.validUrl = 'noRSS';
+      return hasRSS(proxyUrl).then((result) => {
+        console.log(result)
+        if (result) {
+          state.currentUrl = url;
+          state.stateApp = 'filling';
+          state.validUrl = 'hasRSS';
+        } else {
+          state.validUrl = 'noRSS';
+        }
+      })
     }
   })
   .catch(() => {
@@ -139,7 +150,7 @@ const render = (state) => {
     elementInput.classList.remove('is-invalid');
     elementInput.focus();
     state.validUrl = '';
-    getRSS(state.currentUrl, state).then((data) => {
+    return getRSS(state.currentUrl, state).then((data) => {
       const [ currentFeed, currentPosts ] = data;
       state.feeds.push(currentFeed);
       state.posts.push(...currentPosts);
@@ -191,8 +202,8 @@ const render = (state) => {
         });
       }
       renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
-
-
+ 
+      
     state.stateApp = 'changePosts';
     if (state.stateApp === 'changePosts') {
         const rebuildData = (state) => {
@@ -200,15 +211,12 @@ const render = (state) => {
           const urls = state.urls;
           state.posts = [];
             
-            urls.forEach(url => {
-              getRSS(url, state).then((data) => {
-                return state.posts.push(...data)
-              })
-            })
+            urls.forEach(url => getRSS(url, state).then(data => state.posts.unshift(...data)))
+            //state.posts = newData;
+            console.log(state.posts)
             while (containerWithListInPosts.firstChild) {
               containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
             }
-            console.log(state)
             renderPost(containerWithListInPosts, currentPosts);
             renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal)
             setTimeout(rebuild, 5000)
