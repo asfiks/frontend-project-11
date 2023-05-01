@@ -25,10 +25,10 @@ export default (data, state) => {
       state.idFeed += 1;
     }
     const feed = {
-        id: state.idFeed,
-        title: titleTextForFeed,
-        description: descriptionForFeed,
-        link: linkForFeed,
+      id: state.idFeed,
+      title: titleTextForFeed,
+      description: descriptionForFeed,
+      link: linkForFeed,
     };
 
     const items = dom.querySelectorAll('item');
@@ -37,8 +37,9 @@ export default (data, state) => {
     if (state.stateApp === 'changePosts') {
       return itemData;
     }
-    return [ feed , itemData ];
+    console.log(feed)
+    return [feed, itemData];
   } catch (e) {
-    console.log(e);
+    return 'error';
   }
 };

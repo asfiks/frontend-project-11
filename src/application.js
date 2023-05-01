@@ -87,24 +87,22 @@ const creatFeeds = (feed) => {
 
 const getTextDanger = (elementFeedback, elementInput, text) => {
   try {
-    //console.log(elementFeedback)
+    // console.log(elementFeedback)
     elementFeedback.textContent = text;
     elementFeedback.classList.remove('text-success');
     elementFeedback.classList.add('text-danger');
     elementInput.classList.add('is-invalid');
   } catch (e) {
-    console.log(elementFeedback)
-    console.log(text)
-    console.log(e)
+    console.log(elementFeedback);
+    console.log(text);
+    console.log(e);
   }
 };
 
-const getRSS = (url, state) => {
-  const proxyUrl = makeProxyLink(url);
+const getDataFromURL = (state) => {
+  const proxyUrl = makeProxyLink(state.currentUrl);
   return axios.get(proxyUrl)
-    .then((response) => {
-      return parser(response.data.contents, state);
-    })
+    .then((response) => parser(response.data.contents, state))
     .catch((error) => {
       console.log(error);
     });
@@ -113,26 +111,50 @@ const getRSS = (url, state) => {
 const isValid = (url, state, schema) => schema.validate({ website: url })
   .then(() => {
     if (state.urls.includes(url)) {
-      return state.validUrl = 'thereIs';
-    } else {
-      const proxyUrl = makeProxyLink(url);
-      return hasRSS(proxyUrl).then((result) => {
-        console.log(result)
-        if (result) {
-          state.currentUrl = url;
-          state.stateApp = 'filling';
-          state.validUrl = 'hasRSS';
-        } else {
-          state.validUrl = 'noRSS';
-        }
-      })
+      return state.validUrl = 'thereIsRssInState';
     }
+    const proxyUrl = makeProxyLink(url);
+    return hasRSS(proxyUrl).then((result) => {
+      if (result) {
+        state.currentUrl = url;
+        state.validUrl = 'hasRSS';
+      } else {
+        state.validUrl = 'noRSS';
+      }
+    });
   })
   .catch(() => {
     state.validUrl = 'noValid';
   });
 
+const renderForFeedback = (state) => {
+  const sectionForm = document.querySelector('.bg-dark');
+  const elementInput = document.querySelector('#url-input');
+  const elementFeedback = sectionForm.querySelector('.feedback');
+  switch(state.validUrl) {
+    case 'noRSS':
+      getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'));
+      break;
+    case 'thereIsRssInState':
+      getTextDanger(elementFeedback, elementInput, i18next.t('thereIsRss'));
+      break;
+    case 'noValid':
+      getTextDanger(elementFeedback, elementInput, i18next.t('noValid'));
+      break;
+    case 'hasRSS':
+      state.urls.push(state.currentUrl)
+      render(state)
+      break;
+    default:
+      console.log('errorInrenderFeedback')
+      break;
+  }
+}
+
 const render = (state) => {
+  console.log(state)
+}
+/* const render = (state) => {
   const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = sectionForm.querySelector('.feedback');
@@ -151,10 +173,13 @@ const render = (state) => {
     elementInput.focus();
     state.validUrl = '';
     return getRSS(state.currentUrl, state).then((data) => {
-      const [ currentFeed, currentPosts ] = data;
+      /* if (data === 'error') {
+        render(state);
+      } 
+      const [currentFeed, currentPosts] = data;
       state.feeds.push(currentFeed);
       state.posts.push(...currentPosts);
-      state.urls.push(state.currentUrl)
+      state.urls.push(state.currentUrl);
       if ((state.urls).length === 1) {
         const containerPosts = document.querySelector('.posts');
         containerPosts.append(createNameLists(i18next.t('posts')));
@@ -165,7 +190,7 @@ const render = (state) => {
         const conteinerWithFeeds = containerFeeds.querySelector('.card');
         conteinerWithFeeds.append(createListForContent());
       }
-      
+
       const containerModal = document.querySelector('.modal');
       const modalTitle = containerModal.querySelector('.modal-title');
       const modalBodyWithText = containerModal.querySelector('.modal-body');
@@ -174,7 +199,7 @@ const render = (state) => {
       const containerWithListInPosts = containerPosts.querySelector('ul');
       const containerFeeds = document.querySelector('.feeds');
       const containerWithListInFeeds = containerFeeds.querySelector('ul');
-      const renderFeed = ( containerWithListInFeeds, feed) => {
+      const renderFeed = (containerWithListInFeeds, feed) => {
         containerWithListInFeeds.prepend(creatFeeds(feed));
       };
       const renderPost = (containerWithListInPosts, posts) => {
@@ -190,44 +215,45 @@ const render = (state) => {
       elementInput.value = '';
       elementInput.focus();
       const allButtonView = containerWithListInPosts.querySelectorAll('button');
-      const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal ) => {
-        allButtonView.forEach(button => {
+      const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
+        allButtonView.forEach((button) => {
           button.addEventListener('click', (event) => {
             const idForPost = Number(event.target.getAttribute('data-id'));
-            const [dataForModal] = state.posts.filter(post => post.id === idForPost);
+            const [dataForModal] = state.posts.filter((post) => post.id === idForPost);
             modalTitle.textContent = dataForModal.title;
             modalBodyWithText.textContent = dataForModal.description;
             linkInModal.setAttribute('href', dataForModal.link);
-          })
+          });
         });
-      }
+      };
       renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
- 
-      
-    state.stateApp = 'changePosts';
-    if (state.stateApp === 'changePosts') {
+
+      state.stateApp = 'changePosts';
+      if (state.stateApp === 'changePosts') {
         const rebuildData = (state) => {
+
           const rebuild = () => {
-          const urls = state.urls;
-          state.posts = [];
-            
-            urls.forEach(url => getRSS(url, state).then(data => state.posts.unshift(...data)))
-            //state.posts = newData;
-            console.log(state.posts)
+
+            const { urls } = state;
+            state.posts = [];
+
+            urls.forEach((url) => getRSS(url, state).then((data) => state.posts.unshift(...data)));
+            // state.posts = newData;
+            console.log(state.posts);
             while (containerWithListInPosts.firstChild) {
               containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
             }
             renderPost(containerWithListInPosts, currentPosts);
-            renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal)
-            setTimeout(rebuild, 5000)
-          }
-          setTimeout(rebuild, 5000)
-        }
-        rebuildData(state)
+            renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
+            setTimeout(rebuild, 5000);
+          };
+          setTimeout(rebuild, 5000);
+        };
+        rebuildData(state);
       }
     });
   }
-};
+}; */
 
 export default () => {
   const state = {
@@ -240,16 +266,22 @@ export default () => {
     idFeed: 0,
     idPost: 0,
     dataRSS: [],
+    timerId: null,
 
   };
   const schema = yup.object().shape({
     website: yup.string().url(),
   });
-  const watchedState = viewer(state, render);
+  const watchedState = viewer(state, renderForFeedback, getDataFromURL);
   const form = document.querySelector('.rss-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const inputData = new FormData(e.target).get('url');
     isValid(inputData, watchedState, schema);
   });
+  const updateData = () => {
+    render();
+    state.timerId = setTimeout(updateData, 5000);
+  };
+  updateData();
 };
