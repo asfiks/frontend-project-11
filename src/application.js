@@ -66,6 +66,7 @@ const createNameLists = (text) => {
   return container;
 };
 const createListForContent = () => {
+  console.log('rerere')
   const elementUl = document.createElement('ul');
   elementUl.classList.add('list-group', 'border-0', 'rounded-0');
   return elementUl;
@@ -144,8 +145,9 @@ const renderForFeedback = (state) => {
       break;
     case 'hasRSS':
       state.urls.push(state.currentUrl)
-      state.stateApp = 'filling'
-      render(state)
+      state.stateApp = 'processing'
+      getDataAfterParsing(state)
+      state.validUrl = '';
       break;
     default:
       console.log('errorInrenderFeedback')
@@ -153,26 +155,52 @@ const renderForFeedback = (state) => {
   }
 }
 
-const render = (state) => {
-  if ((state.urls).length === 0) {
-    return;
-  } else {
-    state.posts = [];
-    const {urls} = state;
+const getDataAfterParsing = (state) => {
+  if (state.stateApp === 'processing') {
+    return getDataFromURL(state.currentUrl, state)
+      .then((data) => {
+        if (data === 'error') {
+          console.log('errorInParseTime')
+          getDataAfterParsing(state);
+        } else {
+          const [currentFeed, currentPosts] = data;
+          state.feeds.unshift(currentFeed);
+          state.posts.push(...currentPosts);
+          console.log(state)
+          render(state)
+          return;
+        }
+      })
+  } else if (state.stateApp === 'processed') {
     urls.forEach((url) => getDataFromURL(url, state)
       .then((data) => {
         if (data === 'error') {
           console.log('errorInParseTime')
-          render(state);
+          getDataAfterParsing(state);
         } else {
-        const [currentFeed, currentPosts] = data;
-        state.feeds.push(currentFeed);
-        state.posts.push(...currentPosts);
-        console.log(state)
-        return;
-       }
-     }))
-     
+          const currentPosts = data;
+          state.posts.push(...currentPosts);
+          console.log(state)
+          return;
+        }
+    }))
+  }
+}
+
+const renderFeed = (containerWithListInFeeds, feed) => {
+  containerWithListInFeeds.prepend(creatFeeds(feed));
+};
+
+
+const render = function (state) {
+  
+  if ((state.urls).length === 1 && state.stateApp === 'processing') {
+    
+    
+  }
+  if (state.stateApp === 'processing') {
+    const feed = state.feeds[0]
+    renderFeed(containerWithListInFeeds, feed)
   }
 }  
   //
@@ -306,7 +334,11 @@ export default () => {
     isValid(inputData, watchedState, schema);
   });
   const updateData = function() {
-    render(watchedState);
+    if (watchedState.stateApp === 'processing') {
+      return;
+    } else {
+      render(watchedState);
+    }
     setTimeout(updateData, 10000);
   };
   updateData();

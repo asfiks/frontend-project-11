@@ -15,27 +15,27 @@ const getDataFromItem = (item, state) => {
 export default (data, state) => {
   try {
     const dom = parser.parseFromString(data, 'application/xml');
-    console.log(dom)
-    if (dom.parseError) {
-      return 'error';
-    }
     const titleTextForFeed = dom.querySelector('channel > title').textContent;
     const descriptionForFeed = dom.querySelector('channel > description').textContent;
     const linkForFeed = dom.querySelector('channel > link').textContent;
-
-    state.idFeed += 1;
-    
-    const feed = {
-      id: state.idFeed,
-      title: titleTextForFeed,
-      description: descriptionForFeed,
-      link: linkForFeed,
-    };
-
     const items = dom.querySelectorAll('item');
     const itemsArr = Array.from(items);
-    const itemData = itemsArr.map((item) => getDataFromItem(item, state));
-    return [feed, itemData];
+    if (state.stateApp === 'processing') {
+      state.idFeed += 1;
+      const feed = {
+        id: state.idFeed,
+        title: titleTextForFeed,
+        description: descriptionForFeed,
+        link: linkForFeed,
+      };
+      const itemData = itemsArr.map((item) => getDataFromItem(item, state));
+      return [feed, itemData];
+    }
+    if (state.stateApp === 'processed') {
+      const itemData = itemsArr.map((item) => getDataFromItem(item, state));
+      return itemData;
+    }
+
   } catch (e) {
     console.log(e)
     return 'error';
