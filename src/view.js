@@ -5,12 +5,6 @@ export default (state, renderForFeedback, render, getDataFromURL) => {
     if (path === 'validUrl') {
       renderForFeedback(state);
     }
-    /* if (path === 'feeds') {
-      render(state);
-    } */
-    else if (path === 'urls') {
-      getDataFromURL(state)
-    }
-  }, { path: [ 'validUrl', 'urls'] });
+  });
   return watchedState;
 };

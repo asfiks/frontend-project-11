@@ -15,15 +15,16 @@ const getDataFromItem = (item, state) => {
 export default (data, state) => {
   try {
     const dom = parser.parseFromString(data, 'application/xml');
+    console.log(dom)
     if (dom.parseError) {
-      return { error: 'Unable to parse XML' };
+      return 'error';
     }
     const titleTextForFeed = dom.querySelector('channel > title').textContent;
     const descriptionForFeed = dom.querySelector('channel > description').textContent;
     const linkForFeed = dom.querySelector('channel > link').textContent;
-    if (state.stateApp === 'filling') {
-      state.idFeed += 1;
-    }
+
+    state.idFeed += 1;
+    
     const feed = {
       id: state.idFeed,
       title: titleTextForFeed,
@@ -32,14 +33,11 @@ export default (data, state) => {
     };
 
     const items = dom.querySelectorAll('item');
-    const itemData = Array.from(items)
-      .map((item) => getDataFromItem(item, state));
-    if (state.stateApp === 'changePosts') {
-      return itemData;
-    }
-    console.log(feed)
+    const itemsArr = Array.from(items);
+    const itemData = itemsArr.map((item) => getDataFromItem(item, state));
     return [feed, itemData];
   } catch (e) {
+    console.log(e)
     return 'error';
   }
 };

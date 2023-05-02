@@ -99,8 +99,9 @@ const getTextDanger = (elementFeedback, elementInput, text) => {
   }
 };
 
-const getDataFromURL = (state) => {
-  const proxyUrl = makeProxyLink(state.currentUrl);
+const getDataFromURL = (url, state) => {
+  console.log(url)
+  const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
     .then((response) => parser(response.data.contents, state))
     .catch((error) => {
@@ -143,6 +144,7 @@ const renderForFeedback = (state) => {
       break;
     case 'hasRSS':
       state.urls.push(state.currentUrl)
+      state.stateApp = 'filling'
       render(state)
       break;
     default:
@@ -152,8 +154,32 @@ const renderForFeedback = (state) => {
 }
 
 const render = (state) => {
-  console.log(state)
-}
+  if ((state.urls).length === 0) {
+    return;
+  } else {
+    state.posts = [];
+    const {urls} = state;
+    urls.forEach((url) => getDataFromURL(url, state)
+      .then((data) => {
+        if (data === 'error') {
+          console.log('errorInParseTime')
+          render(state);
+        } else {
+        const [currentFeed, currentPosts] = data;
+        state.feeds.push(currentFeed);
+        state.posts.push(...currentPosts);
+        console.log(state)
+        return;
+       }
+     }))
+     
+  }
+}  
+  //
+  //state.posts = [];
+  //urls.forEach((url) => getRSS(url, state).then((data) => state.posts.unshift(...data)));
+  //console.log(state.posts)
+
 /* const render = (state) => {
   const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
@@ -279,9 +305,10 @@ export default () => {
     const inputData = new FormData(e.target).get('url');
     isValid(inputData, watchedState, schema);
   });
-  const updateData = () => {
-    render();
-    state.timerId = setTimeout(updateData, 5000);
+  const updateData = function() {
+    render(watchedState);
+    setTimeout(updateData, 10000);
   };
   updateData();
 };
+
