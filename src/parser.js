@@ -37,7 +37,6 @@ export default (data, state) => {
     }
 
   } catch (e) {
-    console.log(e)
     return 'error';
   }
 };

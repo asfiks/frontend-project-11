@@ -66,7 +66,6 @@ const createNameLists = (text) => {
   return container;
 };
 const createListForContent = () => {
-  console.log('rerere')
   const elementUl = document.createElement('ul');
   elementUl.classList.add('list-group', 'border-0', 'rounded-0');
   return elementUl;
@@ -88,25 +87,21 @@ const creatFeeds = (feed) => {
 
 const getTextDanger = (elementFeedback, elementInput, text) => {
   try {
-    // console.log(elementFeedback)
     elementFeedback.textContent = text;
     elementFeedback.classList.remove('text-success');
     elementFeedback.classList.add('text-danger');
     elementInput.classList.add('is-invalid');
   } catch (e) {
-    console.log(elementFeedback);
-    console.log(text);
-    console.log(e);
+    throw new Error(e);
   }
 };
 
 const getDataFromURL = (url, state) => {
-  console.log(url)
   const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
     .then((response) => parser(response.data.contents, state))
     .catch((error) => {
-      console.log(error);
+      throw new Error(error);
     });
 };
 
@@ -147,7 +142,13 @@ const renderForFeedback = (state) => {
       state.urls.push(state.currentUrl)
       state.stateApp = 'processing'
       getDataAfterParsing(state)
-      state.validUrl = '';
+      break;
+    case 'rssIsLoad':
+      elementFeedback.textContent = i18next.t('okRSS');
+      elementFeedback.classList.remove('text-danger');
+      elementFeedback.classList.add('text-success');
+      elementInput.value = '';
+      elementInput.focus();
       break;
     default:
       console.log('errorInrenderFeedback')
@@ -166,12 +167,12 @@ const getDataAfterParsing = (state) => {
           const [currentFeed, currentPosts] = data;
           state.feeds.unshift(currentFeed);
           state.posts.push(...currentPosts);
-          console.log(state)
           render(state)
           return;
         }
       })
   } else if (state.stateApp === 'processed') {
+    const urls = state.urls;
     urls.forEach((url) => getDataFromURL(url, state)
       .then((data) => {
         if (data === 'error') {
@@ -180,29 +181,82 @@ const getDataAfterParsing = (state) => {
         } else {
           const currentPosts = data;
           state.posts.push(...currentPosts);
-          console.log(state)
           return;
         }
     }))
   }
 }
 
+const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
+  allButtonView.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const idForPost = Number(event.target.getAttribute('data-id'));
+      const posts = Array.from(state.posts);
+      console.log(posts)
+      const [dataForModal] = posts.filter((post) => post.id === idForPost);
+      modalTitle.textContent = dataForModal.title;
+      modalBodyWithText.textContent = dataForModal.description;
+      linkInModal.setAttribute('href', dataForModal.link);
+    });
+  });
+};
+
 const renderFeed = (containerWithListInFeeds, feed) => {
   containerWithListInFeeds.prepend(creatFeeds(feed));
 };
 
+const renderPosts = (containerWithListInPosts, posts) => {
+  posts.forEach((post) => {
+    containerWithListInPosts.prepend(createPost(post));
+  });
+};
 
-const render = function (state) {
-  
+//const containerPosts = document.querySelector('.posts');
+//const containerFeeds = document.querySelector('.feeds');
+
+
+const render = (state) => {
+  const containerPosts = document.querySelector('.posts');
+  const containerFeeds = document.querySelector('.feeds');
+  const containerModal = document.querySelector('.modal');
+  const modalTitle = containerModal.querySelector('.modal-title');
+  const modalBodyWithText = containerModal.querySelector('.modal-body');
+  const linkInModal = containerModal.querySelector('a');
   if ((state.urls).length === 1 && state.stateApp === 'processing') {
-    
-    
+    containerPosts.append(createNameLists(i18next.t('posts')));
+    containerFeeds.append(createNameLists(i18next.t('feeds')));
   }
   if (state.stateApp === 'processing') {
-    const feed = state.feeds[0]
+    const conteinerWithFeeds = containerFeeds.querySelector('.card');
+    conteinerWithFeeds.append(createListForContent());
+    const containerWithPosts = containerPosts.querySelector('.card');
+    containerWithPosts.append(createListForContent());
+    const feed = state.feeds[0];
+    const posts = state.posts;
+    const containerWithListInFeeds = containerFeeds.querySelector('ul');
     renderFeed(containerWithListInFeeds, feed)
+    const containerWithListInPosts = containerPosts.querySelector('ul');
+    renderPosts(containerWithListInPosts, posts);
+    state.validUrl = 'rssIsLoad';
+    const allButtonView = containerWithListInPosts.querySelectorAll('button');
+    renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
+    renderForFeedback(state);
+    state.stateApp = 'processed';
+    return;
   }
-}  
+  if (state.stateApp === 'processed') {
+    const containerWithListInPosts = containerPosts.querySelector('ul');
+    const posts = state.posts;
+    while (containerWithListInPosts.firstChild) {
+      containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
+    };
+    renderPosts(containerWithListInPosts, posts);
+    const allButtonView = containerWithListInPosts.querySelectorAll('button');
+    
+    renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
+    state.posts = [];
+  }
+} 
   //
   //state.posts = [];
   //urls.forEach((url) => getRSS(url, state).then((data) => state.posts.unshift(...data)));
@@ -334,12 +388,11 @@ export default () => {
     isValid(inputData, watchedState, schema);
   });
   const updateData = function() {
-    if (watchedState.stateApp === 'processing') {
-      return;
-    } else {
-      render(watchedState);
+    if (watchedState.stateApp === 'processed') {
+      getDataAfterParsing(state)
+      return render(state);
     }
-    setTimeout(updateData, 10000);
+    setTimeout(updateData, 5000);
   };
   updateData();
 };
