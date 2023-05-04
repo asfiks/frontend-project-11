@@ -114,15 +114,50 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
     return hasRSS(proxyUrl).then((result) => {
       if (result) {
         state.currentUrl = url;
-        state.validUrl = 'hasRSS';
+         return state.validUrl = 'hasRSS';
       } else {
-        state.validUrl = 'noRSS';
+        return state.validUrl = 'noRSS';
       }
     });
   })
+  
   .catch(() => {
     state.validUrl = 'noValid';
   });
+
+const getDataAfterParsing = (state) => {
+  console.log('work get data')
+  if (state.stateApp === 'processing') {
+    return getDataFromURL(state.currentUrl, state)
+      .then((data) => {
+        if (data === 'error') {
+          console.log('errorInParseTime')
+          getDataAfterParsing(state);
+        } else {
+          console.log('dataJob')
+          const [currentFeed, currentPosts] = data;
+          state.feeds.unshift(currentFeed);
+          state.posts.push(...currentPosts);
+          return;
+        }
+      })
+  } else if (state.stateApp === 'processed') {
+    const urls = state.urls;
+    const result = urls.map((url) => getDataFromURL(url, state)
+      .then((data) => {
+        if (data === 'error') {
+          console.log('errorInParseTime')
+          getDataAfterParsing(state);
+        } else {
+          return data;
+        }
+    }))
+    Promise.all(result).then(values => {
+      const data = values.flat()
+      state.posts = data
+    });
+  }
+}
 
 const renderForFeedback = (state) => {
   const sectionForm = document.querySelector('.bg-dark');
@@ -131,17 +166,22 @@ const renderForFeedback = (state) => {
   switch(state.validUrl) {
     case 'noRSS':
       getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'));
+      state.validUrl = '';
       break;
     case 'thereIsRssInState':
       getTextDanger(elementFeedback, elementInput, i18next.t('thereIsRss'));
+      state.validUrl = '';
       break;
     case 'noValid':
       getTextDanger(elementFeedback, elementInput, i18next.t('noValid'));
+      state.validUrl = '';
       break;
     case 'hasRSS':
+      console.log('2')
       state.urls.push(state.currentUrl)
       state.stateApp = 'processing'
-      getDataAfterParsing(state)
+      //getDataAfterParsing(state)
+      state.validUrl = '';
       break;
     case 'rssIsLoad':
       elementFeedback.textContent = i18next.t('okRSS');
@@ -149,41 +189,10 @@ const renderForFeedback = (state) => {
       elementFeedback.classList.add('text-success');
       elementInput.value = '';
       elementInput.focus();
+      state.validUrl = '';
       break;
     default:
-      console.log('errorInrenderFeedback')
       break;
-  }
-}
-
-const getDataAfterParsing = (state) => {
-  if (state.stateApp === 'processing') {
-    return getDataFromURL(state.currentUrl, state)
-      .then((data) => {
-        if (data === 'error') {
-          console.log('errorInParseTime')
-          getDataAfterParsing(state);
-        } else {
-          const [currentFeed, currentPosts] = data;
-          state.feeds.unshift(currentFeed);
-          state.posts.push(...currentPosts);
-          render(state)
-          return;
-        }
-      })
-  } else if (state.stateApp === 'processed') {
-    const urls = state.urls;
-    urls.forEach((url) => getDataFromURL(url, state)
-      .then((data) => {
-        if (data === 'error') {
-          console.log('errorInParseTime')
-          getDataAfterParsing(state);
-        } else {
-          const currentPosts = data;
-          state.posts.push(...currentPosts);
-          return;
-        }
-    }))
   }
 }
 
@@ -192,7 +201,6 @@ const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkIn
     button.addEventListener('click', (event) => {
       const idForPost = Number(event.target.getAttribute('data-id'));
       const posts = Array.from(state.posts);
-      console.log(posts)
       const [dataForModal] = posts.filter((post) => post.id === idForPost);
       modalTitle.textContent = dataForModal.title;
       modalBodyWithText.textContent = dataForModal.description;
@@ -210,10 +218,6 @@ const renderPosts = (containerWithListInPosts, posts) => {
     containerWithListInPosts.prepend(createPost(post));
   });
 };
-
-//const containerPosts = document.querySelector('.posts');
-//const containerFeeds = document.querySelector('.feeds');
-
 
 const render = (state) => {
   const containerPosts = document.querySelector('.posts');
@@ -254,114 +258,9 @@ const render = (state) => {
     const allButtonView = containerWithListInPosts.querySelectorAll('button');
     
     renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
-    state.posts = [];
+    
   }
 } 
-  //
-  //state.posts = [];
-  //urls.forEach((url) => getRSS(url, state).then((data) => state.posts.unshift(...data)));
-  //console.log(state.posts)
-
-/* const render = (state) => {
-  const sectionForm = document.querySelector('.bg-dark');
-  const elementInput = document.querySelector('#url-input');
-  const elementFeedback = sectionForm.querySelector('.feedback');
-  if (state.validUrl === 'noRSS') {
-    getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'));
-  }
-  if (state.validUrl === 'thereIs') {
-    getTextDanger(elementFeedback, elementInput, i18next.t('thereIsRss'));
-  }
-  if (state.validUrl === 'noValid') {
-    getTextDanger(elementFeedback, elementInput, i18next.t('noValid'));
-  }
-  if (state.validUrl === 'hasRSS') {
-    elementFeedback.textContent = '';
-    elementInput.classList.remove('is-invalid');
-    elementInput.focus();
-    state.validUrl = '';
-    return getRSS(state.currentUrl, state).then((data) => {
-      /* if (data === 'error') {
-        render(state);
-      } 
-      const [currentFeed, currentPosts] = data;
-      state.feeds.push(currentFeed);
-      state.posts.push(...currentPosts);
-      state.urls.push(state.currentUrl);
-      if ((state.urls).length === 1) {
-        const containerPosts = document.querySelector('.posts');
-        containerPosts.append(createNameLists(i18next.t('posts')));
-        const containerFeeds = document.querySelector('.feeds');
-        containerFeeds.append(createNameLists(i18next.t('feeds')));
-        const containerWithPosts = containerPosts.querySelector('.card');
-        containerWithPosts.append(createListForContent());
-        const conteinerWithFeeds = containerFeeds.querySelector('.card');
-        conteinerWithFeeds.append(createListForContent());
-      }
-
-      const containerModal = document.querySelector('.modal');
-      const modalTitle = containerModal.querySelector('.modal-title');
-      const modalBodyWithText = containerModal.querySelector('.modal-body');
-      const linkInModal = containerModal.querySelector('a');
-      const containerPosts = document.querySelector('.posts');
-      const containerWithListInPosts = containerPosts.querySelector('ul');
-      const containerFeeds = document.querySelector('.feeds');
-      const containerWithListInFeeds = containerFeeds.querySelector('ul');
-      const renderFeed = (containerWithListInFeeds, feed) => {
-        containerWithListInFeeds.prepend(creatFeeds(feed));
-      };
-      const renderPost = (containerWithListInPosts, posts) => {
-        posts.forEach((post) => {
-          containerWithListInPosts.prepend(createPost(post));
-        });
-      };
-      renderFeed(containerWithListInFeeds, currentFeed);
-      renderPost(containerWithListInPosts, currentPosts);
-      elementFeedback.textContent = i18next.t('okRSS');
-      elementFeedback.classList.remove('text-danger');
-      elementFeedback.classList.add('text-success');
-      elementInput.value = '';
-      elementInput.focus();
-      const allButtonView = containerWithListInPosts.querySelectorAll('button');
-      const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
-        allButtonView.forEach((button) => {
-          button.addEventListener('click', (event) => {
-            const idForPost = Number(event.target.getAttribute('data-id'));
-            const [dataForModal] = state.posts.filter((post) => post.id === idForPost);
-            modalTitle.textContent = dataForModal.title;
-            modalBodyWithText.textContent = dataForModal.description;
-            linkInModal.setAttribute('href', dataForModal.link);
-          });
-        });
-      };
-      renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
-
-      state.stateApp = 'changePosts';
-      if (state.stateApp === 'changePosts') {
-        const rebuildData = (state) => {
-
-          const rebuild = () => {
-
-            const { urls } = state;
-            state.posts = [];
-
-            urls.forEach((url) => getRSS(url, state).then((data) => state.posts.unshift(...data)));
-            // state.posts = newData;
-            console.log(state.posts);
-            while (containerWithListInPosts.firstChild) {
-              containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
-            }
-            renderPost(containerWithListInPosts, currentPosts);
-            renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
-            setTimeout(rebuild, 5000);
-          };
-          setTimeout(rebuild, 5000);
-        };
-        rebuildData(state);
-      }
-    });
-  }
-}; */
 
 export default () => {
   const state = {
@@ -380,7 +279,7 @@ export default () => {
   const schema = yup.object().shape({
     website: yup.string().url(),
   });
-  const watchedState = viewer(state, renderForFeedback, getDataFromURL);
+  const watchedState = viewer(state, renderForFeedback, render, getDataAfterParsing);
   const form = document.querySelector('.rss-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -389,8 +288,8 @@ export default () => {
   });
   const updateData = function() {
     if (watchedState.stateApp === 'processed') {
-      getDataAfterParsing(state)
-      return render(state);
+      getDataAfterParsing(watchedState)
+      //render(state);
     }
     setTimeout(updateData, 5000);
   };
