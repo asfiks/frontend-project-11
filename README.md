@@ -11,5 +11,5 @@ Rss Reader is a service for aggregating RSS feeds, with the help of which it is 
     make develop - start webpack server for development
     make build - build production 
 
-# Or you can use the server repository by clicking on the link below:
+### Or you can use the server repository by clicking on the link below:
 https://frontend-project-11-phi-ochre.vercel.app/
