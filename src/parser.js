@@ -4,11 +4,14 @@ const getDataFromItem = (item, state) => {
   const title = item.querySelector('title').textContent;
   const description = item.querySelector('description').textContent;
   const link = item.querySelector('link').textContent;
+  let status = '';
+  state.openedLinks.includes(link) ? status = 'showed' : status = 'noShowed';
   state.idPost += 1;
   const id = state.idPost;
   const { idFeed } = state;
+
   return {
-    id, idFeed, title, description, link,
+    id, idFeed, title, description, link, status,
   };
 };
 
@@ -35,8 +38,8 @@ export default (data, state) => {
       const itemData = itemsArr.map((item) => getDataFromItem(item, state));
       return itemData;
     }
-
   } catch (e) {
+    console.log(e);
     return 'error';
   }
 };

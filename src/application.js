@@ -4,7 +4,7 @@ import axios from 'axios';
 import viewer from './view.js';
 import texts from './locales/texts.js';
 import parser from './parser.js';
-import { hasRSS } from './utilits.js';
+import hasRSS from './utilits.js';
 
 i18next.init({
   lng: 'ru',
@@ -30,12 +30,17 @@ const createElementA = (post) => {
   const elementA = document.createElement('a');
   elementA.href = post.link;
   elementA.textContent = post.title;
-  elementA.classList.add('fw-bold');
+  if (post.status === 'noShowed') {
+    elementA.classList.add('fw-bold');
+  } else {
+    elementA.classList.add('fw-normal');
+  }
   elementA.setAttribute('data-id', post.id);
   elementA.setAttribute('target', '_blank');
   elementA.setAttribute('rel', 'noopener noreferrer');
   return elementA;
 };
+
 const createButton = (post) => {
   const button = document.createElement('button');
   button.type = 'button';
@@ -108,62 +113,54 @@ const getDataFromURL = (url, state) => {
 const isValid = (url, state, schema) => schema.validate({ website: url })
   .then(() => {
     if (state.urls.includes(url)) {
-      return state.validUrl = 'thereIsRssInState';
+      return 'thereIsRssInState';
     }
     const proxyUrl = makeProxyLink(url);
     return hasRSS(proxyUrl).then((result) => {
       if (result) {
-        state.currentUrl = url;
-         return state.validUrl = 'hasRSS';
-      } else {
-        return state.validUrl = 'noRSS';
+        return 'hasRSS';
       }
+      return 'noRSS';
     });
   })
-  
-  .catch(() => {
-    state.validUrl = 'noValid';
-  });
+  .catch(() => 'noValid');
 
 const getDataAfterParsing = (state) => {
-  console.log('work get data')
   if (state.stateApp === 'processing') {
     return getDataFromURL(state.currentUrl, state)
       .then((data) => {
         if (data === 'error') {
-          console.log('errorInParseTime')
+          console.log('errorInParstimeeTime');
           getDataAfterParsing(state);
         } else {
-          console.log('dataJob')
           const [currentFeed, currentPosts] = data;
           state.feeds.unshift(currentFeed);
-          state.posts.push(...currentPosts);
-          return;
+          state.posts = currentPosts;
         }
-      })
-  } else if (state.stateApp === 'processed') {
-    const urls = state.urls;
+      });
+  } if (state.stateApp === 'processed') {
+    const { urls } = state;
     const result = urls.map((url) => getDataFromURL(url, state)
       .then((data) => {
         if (data === 'error') {
-          console.log('errorInParseTime')
+          console.log('error on parsing time');
           getDataAfterParsing(state);
         } else {
           return data;
         }
-    }))
-    Promise.all(result).then(values => {
-      const data = values.flat()
-      state.posts = data
+      }));
+    Promise.all(result).then((values) => {
+      const data = values.flat();
+      state.posts = data;
     });
   }
-}
+};
 
 const renderForFeedback = (state) => {
   const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = sectionForm.querySelector('.feedback');
-  switch(state.validUrl) {
+  switch (state.validUrl) {
     case 'noRSS':
       getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'));
       state.validUrl = '';
@@ -177,10 +174,9 @@ const renderForFeedback = (state) => {
       state.validUrl = '';
       break;
     case 'hasRSS':
-      console.log('2')
-      state.urls.push(state.currentUrl)
-      state.stateApp = 'processing'
-      //getDataAfterParsing(state)
+      state.urls.push(state.currentUrl);
+      state.stateApp = 'processing';
+      // getDataAfterParsing(state)
       state.validUrl = '';
       break;
     case 'rssIsLoad':
@@ -194,17 +190,20 @@ const renderForFeedback = (state) => {
     default:
       break;
   }
-}
+};
 
 const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
   allButtonView.forEach((button) => {
     button.addEventListener('click', (event) => {
-      const idForPost = Number(event.target.getAttribute('data-id'));
-      const posts = Array.from(state.posts);
-      const [dataForModal] = posts.filter((post) => post.id === idForPost);
+      const elementWithEvent = event.target.parentNode;
+      const openElementLink = elementWithEvent.querySelector('a');
+      openElementLink.classList.replace('fw-bold', 'fw-normal');
+      const link = openElementLink.getAttribute('href');
+      state.openedLinks.push(link);
+      const [dataForModal] = (state.posts).filter((post) => post.link === link);
       modalTitle.textContent = dataForModal.title;
       modalBodyWithText.textContent = dataForModal.description;
-      linkInModal.setAttribute('href', dataForModal.link);
+      linkInModal.setAttribute('href', link);
     });
   });
 };
@@ -216,6 +215,16 @@ const renderFeed = (containerWithListInFeeds, feed) => {
 const renderPosts = (containerWithListInPosts, posts) => {
   posts.forEach((post) => {
     containerWithListInPosts.prepend(createPost(post));
+  });
+};
+
+const listenerLinks = (state, allElementsLiInPosts) => {
+  allElementsLiInPosts.forEach((element) => {
+    element.addEventListener('click', (event) => {
+      element.classList.replace('fw-bold', 'fw-normal');
+      const link = (event.target).getAttribute('href');
+      state.openedLinks.push(link);
+    });
   });
 };
 
@@ -236,9 +245,9 @@ const render = (state) => {
     const containerWithPosts = containerPosts.querySelector('.card');
     containerWithPosts.append(createListForContent());
     const feed = state.feeds[0];
-    const posts = state.posts;
+    const { posts } = state;
     const containerWithListInFeeds = containerFeeds.querySelector('ul');
-    renderFeed(containerWithListInFeeds, feed)
+    renderFeed(containerWithListInFeeds, feed);
     const containerWithListInPosts = containerPosts.querySelector('ul');
     renderPosts(containerWithListInPosts, posts);
     state.validUrl = 'rssIsLoad';
@@ -250,17 +259,17 @@ const render = (state) => {
   }
   if (state.stateApp === 'processed') {
     const containerWithListInPosts = containerPosts.querySelector('ul');
-    const posts = state.posts;
+    const { posts } = state;
     while (containerWithListInPosts.firstChild) {
       containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
-    };
+    }
     renderPosts(containerWithListInPosts, posts);
+    const allElementsLiInPosts = containerWithListInPosts.querySelectorAll('a');
+    listenerLinks(state, allElementsLiInPosts);
     const allButtonView = containerWithListInPosts.querySelectorAll('button');
-    
     renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
-    
   }
-} 
+};
 
 export default () => {
   const state = {
@@ -272,9 +281,8 @@ export default () => {
     urls: [],
     idFeed: 0,
     idPost: 0,
-    dataRSS: [],
+    openedLinks: [],
     timerId: null,
-
   };
   const schema = yup.object().shape({
     website: yup.string().url(),
@@ -283,16 +291,34 @@ export default () => {
   const form = document.querySelector('.rss-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const inputData = new FormData(e.target).get('url');
-    isValid(inputData, watchedState, schema);
+    const url = new FormData(e.target).get('url');
+    isValid(url, watchedState, schema).then((result) => {
+      switch (result) {
+        case 'thereIsRssInState':
+          watchedState.validUrl = 'thereIsRssInState';
+          break;
+        case 'hasRSS':
+          watchedState.currentUrl = url;
+          watchedState.validUrl = 'hasRSS';
+          break;
+        case 'noRSS':
+          watchedState.validUrl = 'noRSS';
+          break;
+        case 'noValid':
+          watchedState.validUrl = 'noValid';
+          break;
+        default:
+          throw new Error();
+          break;
+      }
+    });
   });
-  const updateData = function() {
+  const updateData = function () {
     if (watchedState.stateApp === 'processed') {
-      getDataAfterParsing(watchedState)
-      //render(state);
+      getDataAfterParsing(watchedState);
+      // render(state);
     }
     setTimeout(updateData, 5000);
   };
   updateData();
 };
-
