@@ -115,14 +115,15 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
     }
     const proxyUrl = makeProxyLink(url);
     return hasRSS(proxyUrl).then((result) => {
-      if (result) {
-        return 'hasRSS';
-      }
-      if (!result) {
-        return 'noRSS';
-      }
       if (result.message === 'Network Error') {
         return 'errorNetwork';
+      } else {
+        if (result) {
+          return 'hasRSS';
+        }
+        if (!result) {
+          return 'noRSS';
+        }
       }
     });
   })
