@@ -104,9 +104,11 @@ const getTextDanger = (elementFeedback, elementInput, text) => {
 const getDataFromURL = (url, state) => {
   const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
-    .then((response) => parser(response.data.contents, state))
-    .catch((error) => {
-      throw new Error(error);
+    .then((response) => {
+      return parser(response.data.contents, state)
+    })
+    .catch(() => {
+      return 'error';
     });
 };
 
@@ -120,18 +122,23 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
       if (result) {
         return 'hasRSS';
       }
-      return 'noRSS';
+      if (!result){
+        return 'noRSS';
+      }
+      if (result.message === "Network Error") {
+        return 'errorNetwork';
+      }
     });
   })
-  .catch(() => 'noValid');
+  .catch(() => 'noValid')
 
 const getDataAfterParsing = (state) => {
   if (state.stateApp === 'processing') {
     return getDataFromURL(state.currentUrl, state)
       .then((data) => {
         if (data === 'error') {
-          console.log('errorInParstimeeTime');
-          getDataAfterParsing(state);
+          state.validUrl = 'errorNetwork';
+          return state.stateApp = 'filling';
         } else {
           const [currentFeed, currentPosts] = data;
           state.feeds.unshift(currentFeed);
@@ -143,16 +150,22 @@ const getDataAfterParsing = (state) => {
     const result = urls.map((url) => getDataFromURL(url, state)
       .then((data) => {
         if (data === 'error') {
-          console.log('error on parsing time');
-          getDataAfterParsing(state);
+          state.validUrl = 'errorNetwork';
         } else {
           return data;
         }
       }));
     Promise.all(result).then((values) => {
       const data = values.flat();
+      if (data.includes(undefined)) {
+        return state.validUrl = 'errorNetwork'
+      } else {
       state.posts = data;
-    });
+      }
+    })
+    .catch((e) => {
+      console.log(e);
+    }) 
   }
 };
 
@@ -161,6 +174,10 @@ const renderForFeedback = (state) => {
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = sectionForm.querySelector('.feedback');
   switch (state.validUrl) {
+    case 'errorNetwork':
+      getTextDanger(elementFeedback, elementInput, i18next.t('errorNetwork'));
+      state.validUrl = '';
+      break;
     case 'noRSS':
       getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'));
       state.validUrl = '';
@@ -176,7 +193,6 @@ const renderForFeedback = (state) => {
     case 'hasRSS':
       state.urls.push(state.currentUrl);
       state.stateApp = 'processing';
-      // getDataAfterParsing(state)
       state.validUrl = '';
       break;
     case 'rssIsLoad':
@@ -316,7 +332,6 @@ export default () => {
   const updateData = function () {
     if (watchedState.stateApp === 'processed') {
       getDataAfterParsing(watchedState);
-      // render(state);
     }
     setTimeout(updateData, 5000);
   };
