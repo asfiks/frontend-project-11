@@ -6,10 +6,7 @@ export default (url) => axios.get(url).then((response) => {
   const dom = parser.parseFromString(response.data.contents, 'application/xml');
   if (dom.getElementsByTagName('parsererror').length > 0) {
     return false;
-  } else {
-    return true;
   }
+  return true;
 })
-.catch(() => {
-  return 'errorNetwork'
-})
+  .catch(() => 'errorNetwork');

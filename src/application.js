@@ -104,12 +104,8 @@ const getTextDanger = (elementFeedback, elementInput, text) => {
 const getDataFromURL = (url, state) => {
   const proxyUrl = makeProxyLink(url);
   return axios.get(proxyUrl)
-    .then((response) => {
-      return parser(response.data.contents, state)
-    })
-    .catch(() => {
-      return 'error';
-    });
+    .then((response) => parser(response.data.contents, state))
+    .catch(() => 'error');
 };
 
 const isValid = (url, state, schema) => schema.validate({ website: url })
@@ -122,15 +118,15 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
       if (result) {
         return 'hasRSS';
       }
-      if (!result){
+      if (!result) {
         return 'noRSS';
       }
-      if (result.message === "Network Error") {
+      if (result.message === 'Network Error') {
         return 'errorNetwork';
       }
     });
   })
-  .catch(() => 'noValid')
+  .catch(() => 'noValid');
 
 const getDataAfterParsing = (state) => {
   if (state.stateApp === 'processing') {
@@ -139,11 +135,10 @@ const getDataAfterParsing = (state) => {
         if (data === 'error') {
           state.validUrl = 'errorNetwork';
           return state.stateApp = 'filling';
-        } else {
-          const [currentFeed, currentPosts] = data;
-          state.feeds.unshift(currentFeed);
-          state.posts = currentPosts;
         }
+        const [currentFeed, currentPosts] = data;
+        state.feeds.unshift(currentFeed);
+        state.posts = currentPosts;
       });
   } if (state.stateApp === 'processed') {
     const { urls } = state;
@@ -158,14 +153,13 @@ const getDataAfterParsing = (state) => {
     Promise.all(result).then((values) => {
       const data = values.flat();
       if (data.includes(undefined)) {
-        return state.validUrl = 'errorNetwork'
-      } else {
-      state.posts = data;
+        return state.validUrl = 'errorNetwork';
       }
+      state.posts = data;
     })
-    .catch((e) => {
-      console.log(e);
-    }) 
+      .catch((e) => {
+        console.log(e);
+      });
   }
 };
 
