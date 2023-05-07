@@ -4,12 +4,15 @@ const getDataFromItem = (item, state) => {
   const title = item.querySelector('title').textContent;
   const description = item.querySelector('description').textContent;
   const link = item.querySelector('link').textContent;
-  let status = '';
-  state.openedLinks.includes(link) ? status = 'showed' : status = 'noShowed';
+  let status;
+  if (state.openedLinks.includes(link)) {
+    status = 'showed';
+  } else {
+    status = 'noShowed';
+  }
   state.idPost += 1;
   const id = state.idPost;
   const { idFeed } = state;
-
   return {
     id, idFeed, title, description, link, status,
   };
@@ -42,4 +45,5 @@ export default (data, state) => {
     console.log(e);
     return 'error';
   }
+  return null;
 };

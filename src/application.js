@@ -117,14 +117,14 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
     return hasRSS(proxyUrl).then((result) => {
       if (result.message === 'Network Error') {
         return 'errorNetwork';
-      } else {
-        if (result) {
-          return 'hasRSS';
-        }
-        if (!result) {
-          return 'noRSS';
-        }
       }
+      if (result) {
+        return 'hasRSS';
+      }
+      if (!result) {
+        return 'noRSS';
+      }
+      return null;
     });
   })
   .catch(() => 'noValid');
@@ -135,11 +135,13 @@ const getDataAfterParsing = (state) => {
       .then((data) => {
         if (data === 'error') {
           state.validUrl = 'errorNetwork';
-          return state.stateApp = 'filling';
+          state.stateApp = 'filling';
+          return null;
         }
         const [currentFeed, currentPosts] = data;
         state.feeds.unshift(currentFeed);
         state.posts = currentPosts;
+        return null;
       });
   } if (state.stateApp === 'processed') {
     const { urls } = state;
@@ -150,18 +152,22 @@ const getDataAfterParsing = (state) => {
         } else {
           return data;
         }
+        return null;
       }));
     Promise.all(result).then((values) => {
       const data = values.flat();
       if (data.includes(undefined)) {
-        return state.validUrl = 'errorNetwork';
+        state.validUrl = 'errorNetwork';
+        return null;
       }
       state.posts = data;
+      return null;
     })
       .catch((e) => {
         console.log(e);
       });
   }
+  return null;
 };
 
 const renderForFeedback = (state) => {
@@ -293,7 +299,6 @@ export default () => {
     idFeed: 0,
     idPost: 0,
     openedLinks: [],
-    timerId: null,
   };
   const schema = yup.object().shape({
     website: yup.string().url(),
@@ -319,12 +324,11 @@ export default () => {
           watchedState.validUrl = 'noValid';
           break;
         default:
-          throw new Error();
           break;
       }
     });
   });
-  const updateData = function () {
+  const updateData = function updateDataFunction() {
     if (watchedState.stateApp === 'processed') {
       getDataAfterParsing(watchedState);
     }
