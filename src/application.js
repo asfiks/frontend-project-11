@@ -136,12 +136,12 @@ const getDataAfterParsing = (state) => {
         if (data === 'error') {
           state.validUrl = 'errorNetwork';
           state.stateApp = 'filling';
-          return null;
+        } else {
+          state.urls.push(state.currentUrl);
+          const [currentFeed, currentPosts] = data;
+          state.feeds.unshift(currentFeed);
+          state.posts = currentPosts;
         }
-        const [currentFeed, currentPosts] = data;
-        state.feeds.unshift(currentFeed);
-        state.posts = currentPosts;
-        return null;
       });
   } if (state.stateApp === 'processed') {
     const { urls } = state;
@@ -149,14 +149,12 @@ const getDataAfterParsing = (state) => {
       .then((data) => {
         if (data === 'error') {
           state.validUrl = 'errorNetwork';
-        } else {
-          return data;
         }
-        return null;
+        return data;
       }));
     Promise.all(result).then((values) => {
       const data = values.flat();
-      if (data.includes(undefined)) {
+      if (data.includes('error')) {
         state.validUrl = 'errorNetwork';
         return null;
       }
@@ -192,7 +190,6 @@ const renderForFeedback = (state) => {
       state.validUrl = '';
       break;
     case 'hasRSS':
-      state.urls.push(state.currentUrl);
       state.stateApp = 'processing';
       state.validUrl = '';
       break;
