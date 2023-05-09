@@ -1,6 +1,7 @@
 ### Hexlet tests and linter status:
 
 [![Actions Status](https://github.com/asfiks/frontend-project-11/workflows/hexlet-check/badge.svg)](https://github.com/asfiks/frontend-project-11/actions)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/b8cbcf7d357b5ec1a2cd/test_coverage)](https://codeclimate.com/github/asfiks/frontend-project-11/test_coverage)
 
 Rss Reader is a service for aggregating RSS feeds, with the help of which it is convenient to read a variety of sources, for example, blogs. He allows you to add an unlimited number of RSS feeds, updates them himself and adds new entries to the general stream, noting what he has read. It is possible to go to the page with the full information of the post.
 
