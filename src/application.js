@@ -4,7 +4,7 @@ import axios from 'axios';
 import viewer from './view.js';
 import texts from './locales/texts.js';
 import parser from './parser.js';
-import hasRSS from './utilits.js';
+import { hasRSS, getNormalizePosts } from './utilits.js';
 
 i18next.init({
   lng: 'ru',
@@ -141,6 +141,7 @@ const getDataAfterParsing = (state) => {
           const [currentFeed, currentPosts] = data;
           state.feeds.unshift(currentFeed);
           state.posts = currentPosts;
+          console.log(state.posts);
         }
       });
   } if (state.stateApp === 'processed') {
@@ -158,7 +159,7 @@ const getDataAfterParsing = (state) => {
         state.validUrl = 'errorNetwork';
         return null;
       }
-      state.posts = data;
+      state.posts = getNormalizePosts(state.openedLinks, data);
       return null;
     })
       .catch((e) => {

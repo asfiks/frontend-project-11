@@ -1,18 +1,12 @@
 const parser = new DOMParser();
 
-const getDataFromItem = (item, state) => {
+const getDataFromItem = (item) => {
   const title = item.querySelector('title').textContent;
   const description = item.querySelector('description').textContent;
   const link = item.querySelector('link').textContent;
-  let status;
-  if (state.openedLinks.includes(link)) {
-    status = 'showed';
-  } else {
-    status = 'noShowed';
-  }
-  state.idPost += 1;
-  const id = state.idPost;
-  const { idFeed } = state;
+  const status = 'noShowed';
+  const id = null;
+  const idFeed = null;
   return {
     id, idFeed, title, description, link, status,
   };
@@ -27,9 +21,8 @@ export default (data, state) => {
     const items = dom.querySelectorAll('item');
     const itemsArr = Array.from(items);
     if (state.stateApp === 'processing') {
-      state.idFeed += 1;
       const feed = {
-        id: state.idFeed,
+        id: null,
         title: titleTextForFeed,
         description: descriptionForFeed,
         link: linkForFeed,
