@@ -129,7 +129,7 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
   })
   .catch(() => 'noValid');
 
-const getDataAfterParsing = (state) => {
+export const getDataAfterParsing = (state) => {
   if (state.stateApp === 'processing') {
     return getDataFromURL(state.currentUrl, state)
       .then((data) => {
@@ -141,7 +141,6 @@ const getDataAfterParsing = (state) => {
           const [currentFeed, currentPosts] = data;
           state.feeds.unshift(currentFeed);
           state.posts = currentPosts;
-          console.log(state.posts);
         }
       });
   } if (state.stateApp === 'processed') {
@@ -169,7 +168,7 @@ const getDataAfterParsing = (state) => {
   return null;
 };
 
-const renderForFeedback = (state) => {
+export const renderForFeedback = (state) => {
   const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = sectionForm.querySelector('.feedback');
@@ -243,7 +242,7 @@ const listenerLinks = (state, allElementsLiInPosts) => {
   });
 };
 
-const render = (state) => {
+export const render = (state) => {
   const containerPosts = document.querySelector('.posts');
   const containerFeeds = document.querySelector('.feeds');
   const containerModal = document.querySelector('.modal');
@@ -301,7 +300,7 @@ export default () => {
   const schema = yup.object().shape({
     website: yup.string().url(),
   });
-  const watchedState = viewer(state, renderForFeedback, render, getDataAfterParsing);
+  const watchedState = viewer(state);
   const form = document.querySelector('.rss-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();

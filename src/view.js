@@ -1,6 +1,9 @@
 import onChange from 'on-change';
+import { renderForFeedback, render, getDataAfterParsing } from './application.js';
+/* import render from './application.js';
+import getDataAfterParsing from './application.js' */
 
-export default (state, renderForFeedback, render, getDataAfterParsing) => {
+export default (state) => {
   const watchedState = onChange(state, (path, value) => {
     if (path === 'validUrl' && value !== '') {
       renderForFeedback(watchedState);
