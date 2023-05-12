@@ -133,7 +133,7 @@ const listenerLinks = (state, allElementsLiInPosts) => {
     element.addEventListener('click', (event) => {
       element.classList.replace('fw-bold', 'fw-normal');
       const link = (event.target).getAttribute('href');
-      state.openedLinks.push(link);
+      state.usedLinks.push(link);
     });
   });
 };
@@ -145,7 +145,7 @@ const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkIn
       const openElementLink = elementWithEvent.querySelector('a');
       openElementLink.classList.replace('fw-bold', 'fw-normal');
       const link = openElementLink.getAttribute('href');
-      state.openedLinks.push(link);
+      state.usedLinks.push(link);
       const [dataForModal] = (state.posts).filter((post) => post.link === link);
       modalTitle.textContent = dataForModal.title;
       modalBodyWithText.textContent = dataForModal.description;

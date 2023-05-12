@@ -20,23 +20,16 @@ export default (data, state) => {
     const linkForFeed = dom.querySelector('channel > link').textContent;
     const items = dom.querySelectorAll('item');
     const itemsArr = Array.from(items);
-    if (state.stateApp === 'processing') {
-      const feed = {
-        id: null,
-        title: titleTextForFeed,
-        description: descriptionForFeed,
-        link: linkForFeed,
-      };
-      const itemData = itemsArr.map((item) => getDataFromItem(item, state));
-      return [feed, itemData];
-    }
-    if (state.stateApp === 'processed') {
-      const itemData = itemsArr.map((item) => getDataFromItem(item, state));
-      return itemData;
-    }
+    const feed = {
+      id: null,
+      title: titleTextForFeed,
+      description: descriptionForFeed,
+      link: linkForFeed,
+    };
+    const itemData = itemsArr.map((item) => getDataFromItem(item, state));
+    return [feed, itemData];
   } catch (e) {
     console.log(e);
     return 'error';
   }
-  return null;
 };

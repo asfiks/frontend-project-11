@@ -4,7 +4,7 @@ import axios from 'axios';
 import viewer from './view.js';
 import texts from './locales/texts.js';
 import parser from './parser.js';
-import { hasRSS, getNormalizePosts } from './utilits.js';
+import { hasRSS, getFeedAndPostsNormalize } from './utilits.js';
 
 i18next.init({
   lng: 'ru',
@@ -57,27 +57,32 @@ export const getDataAfterParsing = (state) => {
           state.stateApp = 'filling';
         } else {
           state.urls.push(state.currentUrl);
-          const [currentFeed, currentPosts] = data;
+          const [currentFeed, currentPosts] = getFeedAndPostsNormalize(state, data);
           state.feeds.unshift(currentFeed);
           state.posts = currentPosts;
         }
       });
   } if (state.stateApp === 'processed') {
     const { urls } = state;
-    const result = urls.map((url) => getDataFromURL(url, state)
-      .then((data) => {
-        if (data === 'error') {
-          state.validUrl = 'errorNetwork';
-        }
-        return data;
-      }));
+    const result = urls.map((url) => {
+      state.currentUrl = url;
+      return getDataFromURL(url, state)
+        .then((data) => {
+          if (data === 'error') {
+            state.validUrl = 'errorNetwork';
+          }
+          const dataNormalazed = getFeedAndPostsNormalize(state, data);
+          return dataNormalazed;
+        });
+    });
+
     Promise.all(result).then((values) => {
       const data = values.flat();
       if (data.includes('error')) {
         state.validUrl = 'errorNetwork';
         return null;
       }
-      state.posts = getNormalizePosts(state.openedLinks, data);
+      state.posts = data;
       return null;
     })
       .catch((e) => {
@@ -95,9 +100,8 @@ export default () => {
     validUrl: '',
     currentUrl: '',
     urls: [],
-    idFeed: 0,
-    idPost: 0,
-    openedLinks: [],
+    idPosts: 0,
+    usedLinks: [],
   };
   const schema = yup.object().shape({
     website: yup.string().url(),
@@ -131,7 +135,6 @@ export default () => {
   });
   const updateData = function updateDataFunction() {
     if (watchedState.stateApp === 'processed') {
-      console.log('update');
       getDataAfterParsing(watchedState);
     }
     setTimeout(updateData, 5000);
