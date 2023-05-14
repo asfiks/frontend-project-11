@@ -20,8 +20,10 @@ export const getFeedAndPostsNormalize = (state, data) => {
       state.idPosts += 1;
       post.id = state.idPosts;
       post.idFeed = url;
+      post.status = 'noShowed';
       return post;
     });
+    console.log(feed, normalazedPosts)
     return [feed, normalazedPosts];
   }
   if (state.stateApp === 'processed') {
@@ -32,6 +34,8 @@ export const getFeedAndPostsNormalize = (state, data) => {
       post.idFeed = url;
       if (links.includes(post.link)) {
         post.status = 'showed';
+      } else {
+        post.status = 'noShowed';
       }
       return post;
     });

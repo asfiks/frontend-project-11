@@ -4,11 +4,8 @@ const getDataFromItem = (item) => {
   const title = item.querySelector('title').textContent;
   const description = item.querySelector('description').textContent;
   const link = item.querySelector('link').textContent;
-  const status = 'noShowed';
-  const id = null;
-  const idFeed = null;
   return {
-    id, idFeed, title, description, link, status,
+     title, description, link,
   };
 };
 
@@ -21,7 +18,6 @@ export default (data, state) => {
     const items = dom.querySelectorAll('item');
     const itemsArr = Array.from(items);
     const feed = {
-      id: null,
       title: titleTextForFeed,
       description: descriptionForFeed,
       link: linkForFeed,

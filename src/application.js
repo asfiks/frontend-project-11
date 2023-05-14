@@ -49,6 +49,8 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
   .catch(() => 'noValid');
 
 export const getDataAfterParsing = (state) => {
+  console.log('сработал getDataAfterParsing')
+  console.log(state)
   if (state.stateApp === 'processing') {
     return getDataFromURL(state.currentUrl, state)
       .then((data) => {
@@ -60,6 +62,7 @@ export const getDataAfterParsing = (state) => {
           const [currentFeed, currentPosts] = getFeedAndPostsNormalize(state, data);
           state.feeds.unshift(currentFeed);
           state.posts = currentPosts;
+          state.validUrl = 'hasRSS'
         }
       });
   } if (state.stateApp === 'processed') {
@@ -112,29 +115,19 @@ export default () => {
     e.preventDefault();
     const url = new FormData(e.target).get('url');
     isValid(url, watchedState, schema).then((result) => {
-      switch (result) {
-        case 'thereIsRssInState':
-          watchedState.validUrl = 'thereIsRssInState';
-          break;
-        case 'hasRSS':
-          watchedState.currentUrl = url;
-          state.stateApp = 'processing';
-          state.validUrl = '';
-          getDataAfterParsing(watchedState);
-          break;
-        case 'noRSS':
-          watchedState.validUrl = 'noRSS';
-          break;
-        case 'noValid':
-          watchedState.validUrl = 'noValid';
-          break;
-        default:
-          break;
+      if (result === 'hasRSS') {
+        state.stateApp = 'processing';
+        watchedState.currentUrl = url;
+        getDataAfterParsing(watchedState);
+      } else {
+        watchedState.validUrl = result;
       }
     });
   });
   const updateData = function updateDataFunction() {
+    console.log('из апдейт дата', watchedState)
     if (watchedState.stateApp === 'processed') {
+      
       getDataAfterParsing(watchedState);
     }
     setTimeout(updateData, 5000);

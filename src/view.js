@@ -12,37 +12,17 @@ const getTextDanger = (elementFeedback, elementInput, text) => {
   }
 };
 
-const renderForFeedback = (state) => {
+const renderForFeedback = (text) => {
   const sectionForm = document.querySelector('.bg-dark');
   const elementInput = document.querySelector('#url-input');
   const elementFeedback = sectionForm.querySelector('.feedback');
-  switch (state.validUrl) {
-    case 'errorNetwork':
-      getTextDanger(elementFeedback, elementInput, i18next.t('errorNetwork'));
-      state.validUrl = '';
-      break;
-    case 'noRSS':
-      getTextDanger(elementFeedback, elementInput, i18next.t('noRSS'));
-      state.validUrl = '';
-      break;
-    case 'thereIsRssInState':
-      getTextDanger(elementFeedback, elementInput, i18next.t('thereIsRss'));
-      state.validUrl = '';
-      break;
-    case 'noValid':
-      getTextDanger(elementFeedback, elementInput, i18next.t('noValid'));
-      state.validUrl = '';
-      break;
-    case 'rssIsLoad':
-      elementFeedback.textContent = i18next.t('okRSS');
-      elementFeedback.classList.remove('text-danger');
-      elementFeedback.classList.add('text-success');
-      elementInput.value = '';
-      elementInput.focus();
-      state.validUrl = '';
-      break;
-    default:
-      break;
+  getTextDanger(elementFeedback, elementInput, i18next.t(text));
+  if (text === 'okRSS') {
+    elementFeedback.textContent = i18next.t(text);
+    elementFeedback.classList.remove('text-danger');
+    elementFeedback.classList.add('text-success');
+    elementInput.value = '';
+    elementInput.focus();
   }
 };
 
@@ -176,11 +156,9 @@ const render = (state) => {
     renderFeed(containerWithListInFeeds, feed);
     const containerWithListInPosts = containerPosts.querySelector('ul');
     renderPosts(containerWithListInPosts, posts);
-    state.validUrl = 'rssIsLoad';
     const allButtonView = containerWithListInPosts.querySelectorAll('button');
     renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
-    renderForFeedback(state);
-    state.stateApp = 'processed';
+    renderForFeedback('okRSS');
     return;
   }
   if (state.stateApp === 'processed') {
@@ -200,10 +178,33 @@ const render = (state) => {
 export default (state) => {
   const watchedState = onChange(state, (path, value) => {
     if (path === 'validUrl' && value !== '') {
-      renderForFeedback(watchedState);
+      console.log('сработал вотчстейт на рендерфидбэк')
+      switch (value) {
+        case 'errorNetwork':
+          renderForFeedback('errorNetwork');
+          break;
+        case 'thereIsRssInState':
+          renderForFeedback('thereIsRss');
+          break;
+        case 'hasRSS':
+          watchedState.stateApp = 'processing';
+          break;
+        case 'noRSS':
+          renderForFeedback('noRSS');
+          break;
+        case 'noValid':
+          renderForFeedback('noValid');
+          break;
+        default:
+          break;
+      }
+      watchedState.validUrl = ''; //проверить на использование path
     }
-    if (path === 'posts' && value.length !== 0) {
+    if (path === 'posts') {
+      console.log('сработал вотч на рендер постов')
       render(watchedState);
+      watchedState.stateApp = 'processed';
+      console.log(watchedState.stateApp)
     }
   });
   return watchedState;
