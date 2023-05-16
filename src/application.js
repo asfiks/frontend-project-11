@@ -49,8 +49,6 @@ const isValid = (url, state, schema) => schema.validate({ website: url })
   .catch(() => 'noValid');
 
 export const getDataAfterParsing = (state) => {
-  console.log('сработал getDataAfterParsing')
-  console.log(state)
   if (state.stateApp === 'processing') {
     return getDataFromURL(state.currentUrl, state)
       .then((data) => {
@@ -125,9 +123,7 @@ export default () => {
     });
   });
   const updateData = function updateDataFunction() {
-    console.log('из апдейт дата', watchedState)
     if (watchedState.stateApp === 'processed') {
-      
       getDataAfterParsing(watchedState);
     }
     setTimeout(updateData, 5000);

@@ -178,7 +178,6 @@ const render = (state) => {
 export default (state) => {
   const watchedState = onChange(state, (path, value) => {
     if (path === 'validUrl' && value !== '') {
-      console.log('сработал вотчстейт на рендерфидбэк')
       switch (value) {
         case 'errorNetwork':
           renderForFeedback('errorNetwork');
@@ -186,9 +185,11 @@ export default (state) => {
         case 'thereIsRssInState':
           renderForFeedback('thereIsRss');
           break;
-        case 'hasRSS':
-          watchedState.stateApp = 'processing';
-          break;
+/*        case 'hasRSS':
+          //console.log(state)
+          //watchedState.stateApp = 'processing';
+          //console.log(state)
+          break; */
         case 'noRSS':
           renderForFeedback('noRSS');
           break;
@@ -198,13 +199,11 @@ export default (state) => {
         default:
           break;
       }
-      watchedState.validUrl = ''; //проверить на использование path
+      state.validUrl = ''; //проверить на использование path
     }
     if (path === 'posts') {
-      console.log('сработал вотч на рендер постов')
       render(watchedState);
-      watchedState.stateApp = 'processed';
-      console.log(watchedState.stateApp)
+      state.stateApp = 'processed';
     }
   });
   return watchedState;
