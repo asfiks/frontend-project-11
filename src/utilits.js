@@ -23,7 +23,7 @@ export const getFeedAndPostsNormalize = (state, data) => {
       post.status = 'noShowed';
       return post;
     });
-    console.log(feed, normalazedPosts)
+    console.log(feed, normalazedPosts);
     return [feed, normalazedPosts];
   }
   if (state.stateApp === 'processed') {

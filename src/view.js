@@ -108,7 +108,7 @@ const renderPosts = (containerWithListInPosts, posts) => {
   });
 };
 
-const listenerLinks = (state, allElementsLiInPosts) => {
+/* const listenerLinks = (state, allElementsLiInPosts) => {
   allElementsLiInPosts.forEach((element) => {
     element.addEventListener('click', (event) => {
       element.classList.replace('fw-bold', 'fw-normal');
@@ -116,7 +116,7 @@ const listenerLinks = (state, allElementsLiInPosts) => {
       state.usedLinks.push(link);
     });
   });
-};
+}; */
 
 const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
   allButtonView.forEach((button) => {
@@ -124,6 +124,7 @@ const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkIn
       const elementWithEvent = event.target.parentNode;
       const openElementLink = elementWithEvent.querySelector('a');
       openElementLink.classList.replace('fw-bold', 'fw-normal');
+      openElementLink.classList.add('link-secondary');
       const link = openElementLink.getAttribute('href');
       state.usedLinks.push(link);
       const [dataForModal] = (state.posts).filter((post) => post.link === link);
@@ -168,8 +169,8 @@ const render = (state) => {
       containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
     }
     renderPosts(containerWithListInPosts, posts);
-    const allElementsLiInPosts = containerWithListInPosts.querySelectorAll('a');
-    listenerLinks(state, allElementsLiInPosts);
+    // const allElementsLiInPosts = containerWithListInPosts.querySelectorAll('a');
+    // listenerLinks(state, allElementsLiInPosts);
     const allButtonView = containerWithListInPosts.querySelectorAll('button');
     renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
   }
@@ -185,7 +186,7 @@ export default (state) => {
         case 'thereIsRssInState':
           renderForFeedback('thereIsRss');
           break;
-/*        case 'hasRSS':
+          /*        case 'hasRSS':
           //console.log(state)
           //watchedState.stateApp = 'processing';
           //console.log(state)
@@ -199,7 +200,7 @@ export default (state) => {
         default:
           break;
       }
-      state.validUrl = ''; //проверить на использование path
+      state.validUrl = ''; // проверить на использование path
     }
     if (path === 'posts') {
       render(watchedState);

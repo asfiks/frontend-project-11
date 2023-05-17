@@ -5,7 +5,7 @@ const getDataFromItem = (item) => {
   const description = item.querySelector('description').textContent;
   const link = item.querySelector('link').textContent;
   return {
-     title, description, link,
+    title, description, link,
   };
 };
 

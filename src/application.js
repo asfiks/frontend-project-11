@@ -60,7 +60,7 @@ export const getDataAfterParsing = (state) => {
           const [currentFeed, currentPosts] = getFeedAndPostsNormalize(state, data);
           state.feeds.unshift(currentFeed);
           state.posts = currentPosts;
-          state.validUrl = 'hasRSS'
+          state.validUrl = 'hasRSS';
         }
       });
   } if (state.stateApp === 'processed') {
@@ -93,6 +93,19 @@ export const getDataAfterParsing = (state) => {
   return null;
 };
 
+const listenerLinks = (state) => {
+  const allLinkInPosts = document.querySelectorAll('a[target="_blank"][rel="noopener noreferrer"]');
+  allLinkInPosts.forEach((element) => {
+    element.addEventListener('click', (event) => {
+      console.log('work listen');
+      element.classList.replace('fw-bold', 'fw-normal');
+      element.classList.add('link-secondary');
+      const link = (event.target).getAttribute('href');
+      state.usedLinks.push(link);
+    });
+  });
+};
+
 export default () => {
   const state = {
     stateApp: 'filling',
@@ -116,7 +129,9 @@ export default () => {
       if (result === 'hasRSS') {
         state.stateApp = 'processing';
         watchedState.currentUrl = url;
-        getDataAfterParsing(watchedState);
+        getDataAfterParsing(watchedState).then(() => {
+          listenerLinks(state);
+        });
       } else {
         watchedState.validUrl = result;
       }
