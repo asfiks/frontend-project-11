@@ -60,7 +60,7 @@ export const getDataAfterParsing = (state) => {
           const [currentFeed, currentPosts] = getFeedAndPostsNormalize(state, data);
           state.feeds.unshift(currentFeed);
           state.posts = currentPosts;
-          state.stateApp === 'processed';
+          state.stateApp = 'processed';
         }
       });
   } if (state.stateApp === 'processed') {
@@ -138,7 +138,6 @@ export default () => {
   });
   const updateData = function updateDataFunction() {
     if (watchedState.stateApp === 'processed') {
-      
       getDataAfterParsing(watchedState).then(() => {
         listenerLinks(state);
       });

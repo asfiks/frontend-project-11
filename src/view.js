@@ -54,7 +54,7 @@ const createElementA = (post) => {
     elementA.classList.add('fw-bold');
   } else {
     elementA.classList.add('fw-normal');
-    elementA.classList.add('link-secondary')
+    elementA.classList.add('link-secondary');
   }
   elementA.setAttribute('data-id', post.id);
   elementA.setAttribute('target', '_blank');
