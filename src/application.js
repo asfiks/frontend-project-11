@@ -60,7 +60,7 @@ export const getDataAfterParsing = (state) => {
           const [currentFeed, currentPosts] = getFeedAndPostsNormalize(state, data);
           state.feeds.unshift(currentFeed);
           state.posts = currentPosts;
-          state.validUrl = 'hasRSS';
+          state.stateApp === 'processed';
         }
       });
   } if (state.stateApp === 'processed') {
@@ -77,7 +77,7 @@ export const getDataAfterParsing = (state) => {
         });
     });
 
-    Promise.all(result).then((values) => {
+    return Promise.all(result).then((values) => {
       const data = values.flat();
       if (data.includes('error')) {
         state.validUrl = 'errorNetwork';
@@ -90,14 +90,13 @@ export const getDataAfterParsing = (state) => {
         console.log(e);
       });
   }
-  return null;
+  return console.log('error in getDataAfterParsing');
 };
 
 const listenerLinks = (state) => {
   const allLinkInPosts = document.querySelectorAll('a[target="_blank"][rel="noopener noreferrer"]');
   allLinkInPosts.forEach((element) => {
     element.addEventListener('click', (event) => {
-      console.log('work listen');
       element.classList.replace('fw-bold', 'fw-normal');
       element.classList.add('link-secondary');
       const link = (event.target).getAttribute('href');
@@ -139,7 +138,10 @@ export default () => {
   });
   const updateData = function updateDataFunction() {
     if (watchedState.stateApp === 'processed') {
-      getDataAfterParsing(watchedState);
+      
+      getDataAfterParsing(watchedState).then(() => {
+        listenerLinks(state);
+      });
     }
     setTimeout(updateData, 5000);
   };

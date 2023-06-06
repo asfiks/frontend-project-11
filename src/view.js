@@ -54,6 +54,7 @@ const createElementA = (post) => {
     elementA.classList.add('fw-bold');
   } else {
     elementA.classList.add('fw-normal');
+    elementA.classList.add('link-secondary')
   }
   elementA.setAttribute('data-id', post.id);
   elementA.setAttribute('target', '_blank');
@@ -169,8 +170,6 @@ const render = (state) => {
       containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
     }
     renderPosts(containerWithListInPosts, posts);
-    // const allElementsLiInPosts = containerWithListInPosts.querySelectorAll('a');
-    // listenerLinks(state, allElementsLiInPosts);
     const allButtonView = containerWithListInPosts.querySelectorAll('button');
     renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
   }
@@ -186,11 +185,6 @@ export default (state) => {
         case 'thereIsRssInState':
           renderForFeedback('thereIsRss');
           break;
-          /*        case 'hasRSS':
-          //console.log(state)
-          //watchedState.stateApp = 'processing';
-          //console.log(state)
-          break; */
         case 'noRSS':
           renderForFeedback('noRSS');
           break;
@@ -200,11 +194,9 @@ export default (state) => {
         default:
           break;
       }
-      state.validUrl = ''; // проверить на использование path
     }
     if (path === 'posts') {
       render(watchedState);
-      state.stateApp = 'processed';
     }
   });
   return watchedState;
