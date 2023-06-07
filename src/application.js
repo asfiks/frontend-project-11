@@ -108,6 +108,7 @@ const listenerLinks = (state) => {
 export default () => {
   const state = {
     stateApp: 'filling',
+    stateUpdate: '',
     feeds: [],
     posts: [],
     validUrl: '',
@@ -138,11 +139,16 @@ export default () => {
   });
   const updateData = function updateDataFunction() {
     if (watchedState.stateApp === 'processed') {
-      getDataAfterParsing(watchedState).then(() => {
-        listenerLinks(state);
-      });
+      getDataAfterParsing(watchedState)
+        .then(() => {
+          listenerLinks(state);
+        })
+        .finally(() => {
+          setTimeout(updateData, 5000);
+        });
+    } else {
+      setTimeout(updateData, 5000);
     }
-    setTimeout(updateData, 5000);
   };
   updateData();
 };

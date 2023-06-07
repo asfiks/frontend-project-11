@@ -109,16 +109,6 @@ const renderPosts = (containerWithListInPosts, posts) => {
   });
 };
 
-/* const listenerLinks = (state, allElementsLiInPosts) => {
-  allElementsLiInPosts.forEach((element) => {
-    element.addEventListener('click', (event) => {
-      element.classList.replace('fw-bold', 'fw-normal');
-      const link = (event.target).getAttribute('href');
-      state.usedLinks.push(link);
-    });
-  });
-}; */
-
 const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
   allButtonView.forEach((button) => {
     button.addEventListener('click', (event) => {
@@ -147,32 +137,35 @@ const render = (state) => {
     containerPosts.append(createNameLists(i18next.t('posts')));
     containerFeeds.append(createNameLists(i18next.t('feeds')));
   }
-  if (state.stateApp === 'processing') {
-    const conteinerWithFeeds = containerFeeds.querySelector('.card');
-    conteinerWithFeeds.append(createListForContent());
-    const containerWithPosts = containerPosts.querySelector('.card');
-    containerWithPosts.append(createListForContent());
-    const feed = state.feeds[0];
-    const { posts } = state;
-    const containerWithListInFeeds = containerFeeds.querySelector('ul');
-    renderFeed(containerWithListInFeeds, feed);
-    const containerWithListInPosts = containerPosts.querySelector('ul');
-    renderPosts(containerWithListInPosts, posts);
-    const allButtonView = containerWithListInPosts.querySelectorAll('button');
-    renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
-    renderForFeedback('okRSS');
-    return;
+  const conteinerWithFeeds = containerFeeds.querySelector('.card');
+  conteinerWithFeeds.append(createListForContent());
+  const containerWithPosts = containerPosts.querySelector('.card');
+  containerWithPosts.append(createListForContent());
+  const feed = state.feeds[0];
+  const { posts } = state;
+  const containerWithListInFeeds = containerFeeds.querySelector('ul');
+  renderFeed(containerWithListInFeeds, feed);
+  const containerWithListInPosts = containerPosts.querySelector('ul');
+  renderPosts(containerWithListInPosts, posts);
+  const allButtonView = containerWithListInPosts.querySelectorAll('button');
+  renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
+  renderForFeedback('okRSS');
+};
+
+const renderForUpdate = (state) => {
+  const containerPosts = document.querySelector('.posts');
+  const containerModal = document.querySelector('.modal');
+  const modalTitle = containerModal.querySelector('.modal-title');
+  const modalBodyWithText = containerModal.querySelector('.modal-body');
+  const linkInModal = containerModal.querySelector('a');
+  const containerWithListInPosts = containerPosts.querySelector('ul');
+  const { posts } = state;
+  while (containerWithListInPosts.firstChild) {
+    containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
   }
-  if (state.stateApp === 'processed') {
-    const containerWithListInPosts = containerPosts.querySelector('ul');
-    const { posts } = state;
-    while (containerWithListInPosts.firstChild) {
-      containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
-    }
-    renderPosts(containerWithListInPosts, posts);
-    const allButtonView = containerWithListInPosts.querySelectorAll('button');
-    renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
-  }
+  renderPosts(containerWithListInPosts, posts);
+  const allButtonView = containerWithListInPosts.querySelectorAll('button');
+  renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
 };
 
 export default (state) => {
@@ -196,7 +189,16 @@ export default (state) => {
       }
     }
     if (path === 'posts') {
-      render(watchedState);
+      switch (state.stateApp) {
+        case 'processing':
+          render(watchedState);
+          break;
+        case 'processed':
+          renderForUpdate(watchedState);
+          break;
+        default:
+          break;
+      }
     }
   });
   return watchedState;
