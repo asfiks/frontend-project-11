@@ -1,15 +1,18 @@
-import axios from 'axios';
-
 const parser = new DOMParser();
 
-export const hasRSS = (url) => axios.get(url).then((response) => {
-  const dom = parser.parseFromString(response.data.contents, 'application/xml');
-  if (dom.getElementsByTagName('parsererror').length > 0) {
-    return false;
+export const hasRSS = (data) => {
+  try {
+    const dom = parser.parseFromString(data, 'application/xml');
+    console.log(dom);
+    if (dom.getElementsByTagName('parsererror').length > 0) {
+      return false;
+    }
+    return true;
+  } catch {
+    return 'errorNetwork';
   }
-  return true;
-})
-  .catch(() => 'errorNetwork');
+};
+// const makeResponse = (url) => axios.get(url)
 
 export const getFeedAndPostsNormalize = (state, data) => {
   const url = state.currentUrl;

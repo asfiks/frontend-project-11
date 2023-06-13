@@ -13,7 +13,7 @@ i18next.init({
   },
 });
 
-const makeProxyLink = (url) => {
+export const makeProxyLink = (url) => {
   const proxy = new URL('/get', 'https://allorigins.hexlet.app');
   proxy.searchParams.set('url', url);
   proxy.searchParams.set('disableCache', true);
@@ -28,32 +28,15 @@ const getDataFromURL = (url, state) => {
 };
 
 const isValid = (url, state, schema) => schema.validate({ website: url })
-  .then(() => {
-    if (state.urls.includes(url)) {
-      return 'thereIsRssInState';
-    }
-    const proxyUrl = makeProxyLink(url);
-    return hasRSS(proxyUrl).then((result) => {
-      if (result.message === 'Network Error') {
-        return 'errorNetwork';
-      }
-      if (result) {
-        return 'hasRSS';
-      }
-      if (!result) {
-        return 'noRSS';
-      }
-      return null;
-    });
-  })
-  .catch(() => 'noValid');
+  .then(() => true)
+  .catch(() => false);
 
 export const getDataAfterParsing = (state) => {
   if (state.stateApp === 'processing') {
     return getDataFromURL(state.currentUrl, state)
       .then((data) => {
         if (data === 'error') {
-          state.validUrl = 'errorNetwork';
+          state.error = 'errorNetwork';
           state.stateApp = 'filling';
         } else {
           state.urls.push(state.currentUrl);
@@ -70,7 +53,7 @@ export const getDataAfterParsing = (state) => {
       return getDataFromURL(url, state)
         .then((data) => {
           if (data === 'error') {
-            state.validUrl = 'errorNetwork';
+            state.error = 'errorNetwork';
           }
           const dataNormalazed = getFeedAndPostsNormalize(state, data);
           return dataNormalazed;
@@ -108,6 +91,7 @@ const listenerLinks = (state) => {
 export default () => {
   const state = {
     stateApp: 'filling',
+    error: '',
     stateUpdate: '',
     feeds: [],
     posts: [],
@@ -125,22 +109,47 @@ export default () => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const url = new FormData(e.target).get('url');
+    if (state.urls.includes(url)) {
+      watchedState.validUrl = 'thereIsRssInState';
+      return;
+    }
     isValid(url, watchedState, schema).then((result) => {
-      if (result === 'hasRSS') {
-        state.stateApp = 'processing';
-        watchedState.currentUrl = url;
-        getDataAfterParsing(watchedState).then(() => {
-          listenerLinks(state);
+      console.log(result, 'валидность');
+      if (result) {
+        const proxyUrl = makeProxyLink(url);
+        axios.get(proxyUrl).then((res) => {
+          const dataCheck = hasRSS(res.data.contents);
+          console.log('hasRSS', dataCheck);
+          switch (dataCheck) {
+            case 'errorNetwork':
+              watchedState.errorNetwork = 'errorNetwork';
+              break;
+            case true:
+              watchedState.validUrl = 'hasRSS';
+              state.stateApp = 'processing';
+              watchedState.currentUrl = url;
+              return getDataAfterParsing(watchedState).then(() => listenerLinks(state));
+            case false:
+              watchedState.validUrl = 'noRSS';
+              break;
+            default:
+              watchedState.errorNetwork = 'errorNetwork';
+              break;
+          }
+          return null;
         });
       } else {
-        watchedState.validUrl = result;
+        watchedState.validUrl = 'noValid';
+        return null;
       }
+      return null;
     });
   });
   const updateData = function updateDataFunction() {
     if (watchedState.stateApp === 'processed') {
       getDataAfterParsing(watchedState)
         .then(() => {
+          console.log('update');
           listenerLinks(state);
         })
         .finally(() => {

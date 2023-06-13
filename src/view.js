@@ -172,9 +172,9 @@ export default (state) => {
   const watchedState = onChange(state, (path, value) => {
     if (path === 'validUrl' && value !== '') {
       switch (value) {
-        case 'errorNetwork':
+        /*         case 'errorNetwork':
           renderForFeedback('errorNetwork');
-          break;
+          break; */
         case 'thereIsRssInState':
           renderForFeedback('thereIsRss');
           break;
@@ -187,6 +187,9 @@ export default (state) => {
         default:
           break;
       }
+    }
+    if (path === 'error' && value === 'errorNetwork') {
+      renderForFeedback('errorNetwork');
     }
     if (path === 'posts') {
       switch (state.stateApp) {
