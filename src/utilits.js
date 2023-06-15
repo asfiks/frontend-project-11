@@ -3,7 +3,6 @@ const parser = new DOMParser();
 export const hasRSS = (data) => {
   try {
     const dom = parser.parseFromString(data, 'application/xml');
-    console.log(dom);
     if (dom.getElementsByTagName('parsererror').length > 0) {
       return false;
     }
@@ -26,7 +25,6 @@ export const getFeedAndPostsNormalize = (state, data) => {
       post.status = 'noShowed';
       return post;
     });
-    console.log(feed, normalazedPosts);
     return [feed, normalazedPosts];
   }
   if (state.stateApp === 'processed') {

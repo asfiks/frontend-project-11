@@ -20,9 +20,9 @@ const getDataFromURL = (url, state) => {
     .catch(() => 'error');
 };
 
-const isValid = (url, state, schema) => schema.validate({ website: url })
+/* const isValid = (url, state, schema) => schema.validate({ website: url })
   .then(() => true)
-  .catch(() => false);
+  .catch(() => false); */
 
 export const getDataAfterParsing = (state) => {
   if (state.stateApp === 'processing') {
@@ -113,8 +113,8 @@ export default () => {
         watchedState.validUrl = 'thereIsRssInState';
         return;
       }
-      isValid(url, watchedState, schema).then((result) => {
-        if (result) {
+      schema.validate({ website: url })
+        .then(() => {
           const proxyUrl = makeProxyLink(url);
           axios.get(proxyUrl).then((res) => {
             const dataCheck = hasRSS(res.data.contents);
@@ -137,12 +137,11 @@ export default () => {
             }
             return null;
           });
-        } else {
+        })
+        .catch(() => {
           watchedState.validUrl = 'noValid';
           return null;
-        }
-        return null;
-      });
+        });
     });
     const updateData = function updateDataFunction() {
       if (watchedState.stateApp === 'processed') {
