@@ -20,53 +20,47 @@ const getDataFromURL = (url, state) => {
     .catch(() => 'error');
 };
 
-/* const isValid = (url, state, schema) => schema.validate({ website: url })
-  .then(() => true)
-  .catch(() => false); */
+const getDataAfterParsing = (state, url) => getDataFromURL(url, state)
+  .then((data) => {
+    if (data === 'error') {
+      state.error = 'errorNetwork';
+      state.stateApp = 'filling';
+    } else {
+      state.urls.push(url);
+      const [currentFeed, currentPosts] = getFeedAndPostsNormalize(state, data);
+      state.feeds.unshift(currentFeed);
+      state.posts = currentPosts;
+      state.stateApp = 'processed';
+    }
+    return null;
+  });
 
-export const getDataAfterParsing = (state) => {
-  if (state.stateApp === 'processing') {
-    return getDataFromURL(state.currentUrl, state)
+const getNewPosts = (state) => {
+  const { urls } = state;
+  const result = urls.map((url) => {
+    state.currentUrl = url;
+    return getDataFromURL(url, state)
       .then((data) => {
         if (data === 'error') {
           state.error = 'errorNetwork';
-          state.stateApp = 'filling';
-        } else {
-          state.urls.push(state.currentUrl);
-          const [currentFeed, currentPosts] = getFeedAndPostsNormalize(state, data);
-          state.feeds.unshift(currentFeed);
-          state.posts = currentPosts;
-          state.stateApp = 'processed';
         }
+        const dataNormalazed = getFeedAndPostsNormalize(state, data);
+        return dataNormalazed;
       });
-  } if (state.stateApp === 'processed') {
-    const { urls } = state;
-    const result = urls.map((url) => {
-      state.currentUrl = url;
-      return getDataFromURL(url, state)
-        .then((data) => {
-          if (data === 'error') {
-            state.error = 'errorNetwork';
-          }
-          const dataNormalazed = getFeedAndPostsNormalize(state, data);
-          return dataNormalazed;
-        });
-    });
+  });
 
-    return Promise.all(result).then((values) => {
-      const data = values.flat();
-      if (data.includes('error')) {
-        state.validUrl = 'errorNetwork';
-        return null;
-      }
-      state.posts = data;
+  return Promise.all(result).then((values) => {
+    const data = values.flat();
+    if (data.includes('error')) {
+      state.validUrl = 'errorNetwork';
       return null;
-    })
-      .catch((e) => {
-        console.log(e);
-      });
-  }
-  return console.log('error in getDataAfterParsing');
+    }
+    state.posts = data;
+    return null;
+  })
+    .catch((e) => {
+      console.log(e);
+    });
 };
 
 const listenerLinks = (state) => {
@@ -127,12 +121,12 @@ export default () => {
                 watchedState.validUrl = 'hasRSS';
                 state.stateApp = 'processing';
                 watchedState.currentUrl = url;
-                return getDataAfterParsing(watchedState).then(() => listenerLinks(state));
+                return getDataAfterParsing(watchedState, url).then(() => listenerLinks(state));
               case false:
                 watchedState.validUrl = 'noRSS';
                 break;
               default:
-                watchedState.errorNetwork = 'errorNetwork';
+                watchedState.error = 'errorNetwork';
                 break;
             }
             return null;
@@ -145,9 +139,8 @@ export default () => {
     });
     const updateData = function updateDataFunction() {
       if (watchedState.stateApp === 'processed') {
-        getDataAfterParsing(watchedState)
+        getNewPosts(watchedState)
           .then(() => {
-            console.log('update');
             listenerLinks(state);
           })
           .finally(() => {
