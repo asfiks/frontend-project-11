@@ -1,3 +1,4 @@
+import { uniqueId } from 'lodash';
 const parser = new DOMParser();
 
 export const hasRSS = (data) => {
@@ -14,33 +15,32 @@ export const hasRSS = (data) => {
 // const makeResponse = (url) => axios.get(url)
 
 export const getFeedAndPostsNormalize = (state, data) => {
-  const url = state.currentUrl;
+  const url = state.uiState.currentUrl;
   const [feed, posts] = data;
-  if (state.stateApp === 'processing') {
+
+  if (state.form.stateApp === 'processing') {
     feed.id = url;
     const normalazedPosts = posts.map((post) => {
-      state.idPosts += 1;
-      post.id = state.idPosts;
+      const postId = uniqueId();
+      post.id = postId;
       post.idFeed = url;
       post.status = 'noShowed';
       return post;
     });
     return [feed, normalazedPosts];
   }
-  if (state.stateApp === 'processed') {
-    const links = state.usedLinks;
+
+  if (state.form.stateApp === 'processed') {
+    const links = state.uiState.usedLinks;
     const normalazedPosts = posts.map((post) => {
-      state.idPosts += 1;
-      post.id = state.idPosts;
+      const postId = uniqueId();
+      post.id = postId;
       post.idFeed = url;
-      if (links.includes(post.link)) {
-        post.status = 'showed';
-      } else {
-        post.status = 'noShowed';
-      }
+      post.status = links.includes(post.link) ? 'showed' : 'noShowed';
       return post;
     });
     return normalazedPosts;
   }
+
   return null;
 };

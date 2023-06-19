@@ -117,7 +117,7 @@ const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkIn
       openElementLink.classList.replace('fw-bold', 'fw-normal');
       openElementLink.classList.add('link-secondary');
       const link = openElementLink.getAttribute('href');
-      state.usedLinks.push(link);
+      state.uiState.usedLinks.push(link);
       const [dataForModal] = (state.posts).filter((post) => post.link === link);
       modalTitle.textContent = dataForModal.title;
       modalBodyWithText.textContent = dataForModal.description;
@@ -133,7 +133,7 @@ const render = (state) => {
   const modalTitle = containerModal.querySelector('.modal-title');
   const modalBodyWithText = containerModal.querySelector('.modal-body');
   const linkInModal = containerModal.querySelector('a');
-  if ((state.urls).length === 1 && state.stateApp === 'processing') {
+  if ((state.uiState.usedUrls).length === 1 && state.form.stateApp === 'processing') {
     containerPosts.append(createNameLists(i18next.t('posts')));
     containerFeeds.append(createNameLists(i18next.t('feeds')));
   }
@@ -170,7 +170,7 @@ const renderForUpdate = (state) => {
 
 export default (state) => {
   const watchedState = onChange(state, (path, value) => {
-    if (path === 'validUrl' && value !== '') {
+    if (path === 'form.valid' && value !== '') {
       switch (value) {
         case 'thereIsRssInState':
           renderForFeedback('thereIsRss');
@@ -185,11 +185,11 @@ export default (state) => {
           break;
       }
     }
-    if (path === 'error' && value === 'errorNetwork') {
+    if (path === 'form.processError' && value === 'errorNetwork') {
       renderForFeedback('errorNetwork');
     }
     if (path === 'posts') {
-      switch (state.stateApp) {
+      switch (state.form.stateApp) {
         case 'processing':
           render(watchedState);
           break;

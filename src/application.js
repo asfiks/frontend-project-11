@@ -23,43 +23,46 @@ const getDataFromURL = (url, state) => {
 const getDataAfterParsing = (state, url) => getDataFromURL(url, state)
   .then((data) => {
     if (data === 'error') {
-      state.error = 'errorNetwork';
-      state.stateApp = 'filling';
+      state.form.processError = 'errorNetwork';
+      state.form.stateApp = 'filling';
     } else {
-      state.urls.push(url);
       const [currentFeed, currentPosts] = getFeedAndPostsNormalize(state, data);
       state.feeds.unshift(currentFeed);
       state.posts = currentPosts;
-      state.stateApp = 'processed';
+      state.form.stateApp = 'processed';
     }
     return null;
   });
 
 const getNewPosts = (state) => {
-  const { urls } = state;
-  const result = urls.map((url) => {
-    state.currentUrl = url;
+  const { usedUrls } = state.uiState;
+  const result = usedUrls.map((url) => {
+    state.uiState.currentUrl = url;
     return getDataFromURL(url, state)
       .then((data) => {
         if (data === 'error') {
-          state.error = 'errorNetwork';
+          state.form.processError = 'errorNetwork';
         }
         const dataNormalazed = getFeedAndPostsNormalize(state, data);
         return dataNormalazed;
+      })
+      .catch (() => {
+        state.form.processError = 'errorNetwork';
       });
   });
 
   return Promise.all(result).then((values) => {
     const data = values.flat();
     if (data.includes('error')) {
-      state.validUrl = 'errorNetwork';
+      state.form.processError = 'errorNetwork';
       return null;
     }
     state.posts = data;
+    console.log(data)
     return null;
   })
     .catch((e) => {
-      console.log(e);
+      state.form.errors.push(e);
     });
 };
 
@@ -70,7 +73,7 @@ const listenerLinks = (state) => {
       element.classList.replace('fw-bold', 'fw-normal');
       element.classList.add('link-secondary');
       const link = (event.target).getAttribute('href');
-      state.usedLinks.push(link);
+      state.uiState.usedLinks.push(link);
     });
   });
 };
@@ -83,18 +86,21 @@ export default () => {
     },
   }).then(() => {
     const state = {
-      stateApp: 'filling',
-      error: '',
-      stateUpdate: '',
+      form: {
+        valid: '',
+        stateApp: 'filling',
+        processError: null,
+        errors: []
+      },
       feeds: [],
       posts: [],
-      validUrl: '',
-      currentUrl: '',
-      urls: [],
-      idPosts: 0,
-      usedLinks: [],
+      uiState: {
+        currentUrl: '',
+        usedUrls: [],
+        idPosts: 0,
+        usedLinks: [],
+      },
     };
-
     const schema = yup.object().shape({
       website: yup.string().url(),
     });
@@ -103,42 +109,51 @@ export default () => {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const url = new FormData(e.target).get('url');
-      if (state.urls.includes(url)) {
-        watchedState.validUrl = 'thereIsRssInState';
+      if (state.uiState.usedUrls.includes(url)) {
+        watchedState.form.valid = 'thereIsRssInState';
         return;
       }
       schema.validate({ website: url })
         .then(() => {
           const proxyUrl = makeProxyLink(url);
           axios.get(proxyUrl).then((res) => {
-            const dataCheck = hasRSS(res.data.contents);
-            console.log('hasRSS', dataCheck);
+            const data = res.data.contents;
+            const dataCheck = hasRSS(data);
             switch (dataCheck) {
               case 'errorNetwork':
-                watchedState.errorNetwork = 'errorNetwork';
+                watchedState.form.processError = 'errorNetwork';
                 break;
               case true:
-                watchedState.validUrl = 'hasRSS';
-                state.stateApp = 'processing';
-                watchedState.currentUrl = url;
-                return getDataAfterParsing(watchedState, url).then(() => listenerLinks(state));
+                watchedState.form.valid = 'hasRSS';
+                state.form.stateApp = 'processing';
+                watchedState.uiState.currentUrl = url;
+                watchedState.uiState.usedUrls.push(url);
+                const feedAndPosts = parser(data, watchedState);
+                const [currentFeed, currentPosts] = getFeedAndPostsNormalize(watchedState, feedAndPosts);
+                console.log(currentFeed, currentPosts)
+                watchedState.feeds.unshift(currentFeed);
+                watchedState.posts = currentPosts;
+                watchedState.form.stateApp = 'processed';
+                listenerLinks(watchedState);
+                return ;
               case false:
-                watchedState.validUrl = 'noRSS';
+                watchedState.form.valid = 'noRSS';
                 break;
               default:
-                watchedState.error = 'errorNetwork';
+                watchedState.form.processError = 'errorNetwork';
                 break;
             }
             return null;
-          });
+          })
+          .catch(() => watchedState.form.processError = 'errorNetwork' )
         })
         .catch(() => {
-          watchedState.validUrl = 'noValid';
+          watchedState.form.valid = 'noValid';
           return null;
         });
     });
     const updateData = function updateDataFunction() {
-      if (watchedState.stateApp === 'processed') {
+      if (watchedState.form.stateApp === 'processed') {
         getNewPosts(watchedState)
           .then(() => {
             listenerLinks(state);

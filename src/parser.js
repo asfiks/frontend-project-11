@@ -22,7 +22,7 @@ export default (data, state) => {
       description: descriptionForFeed,
       link: linkForFeed,
     };
-    const itemData = itemsArr.map((item) => getDataFromItem(item, state));
+    const itemData = itemsArr.map((item) => getDataFromItem(item));
     return [feed, itemData];
   } catch (e) {
     console.log(e);
