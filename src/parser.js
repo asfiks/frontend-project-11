@@ -9,7 +9,7 @@ const getDataFromItem = (item) => {
   };
 };
 
-export default (data, state) => {
+export default (data) => {
   try {
     const dom = parser.parseFromString(data, 'application/xml');
     const titleTextForFeed = dom.querySelector('channel > title').textContent;
@@ -24,8 +24,7 @@ export default (data, state) => {
     };
     const itemData = itemsArr.map((item) => getDataFromItem(item));
     return [feed, itemData];
-  } catch (e) {
-    console.log(e);
-    return 'error';
+  } catch {
+    throw new Error();
   }
 };

@@ -1,4 +1,5 @@
 import { uniqueId } from 'lodash';
+
 const parser = new DOMParser();
 
 export const hasRSS = (data) => {
@@ -12,35 +13,30 @@ export const hasRSS = (data) => {
     return 'errorNetwork';
   }
 };
-// const makeResponse = (url) => axios.get(url)
 
-export const getFeedAndPostsNormalize = (state, data) => {
+export const getNormalizeNewData = (state, data) => {
   const url = state.uiState.currentUrl;
   const [feed, posts] = data;
+  feed.id = url;
+  const normalazedPosts = posts.map((post) => {
+    const postId = uniqueId();
+    post.id = postId;
+    post.idFeed = url;
+    post.status = 'noShowed';
+    return post;
+  });
+  return [feed, normalazedPosts];
+};
 
-  if (state.form.stateApp === 'processing') {
-    feed.id = url;
-    const normalazedPosts = posts.map((post) => {
-      const postId = uniqueId();
-      post.id = postId;
-      post.idFeed = url;
-      post.status = 'noShowed';
-      return post;
-    });
-    return [feed, normalazedPosts];
-  }
-
-  if (state.form.stateApp === 'processed') {
-    const links = state.uiState.usedLinks;
-    const normalazedPosts = posts.map((post) => {
-      const postId = uniqueId();
-      post.id = postId;
-      post.idFeed = url;
-      post.status = links.includes(post.link) ? 'showed' : 'noShowed';
-      return post;
-    });
-    return normalazedPosts;
-  }
-
-  return null;
+export const getNormalizeUpdateData = (state, url, data) => {
+  const [, posts] = data;
+  const links = state.uiState.openedLinks;
+  const normalazedPosts = posts.map((post) => {
+    const postId = uniqueId();
+    post.id = postId;
+    post.idFeed = url;
+    post.status = links.includes(post.link) ? 'showed' : 'noShowed';
+    return post;
+  });
+  return normalazedPosts;
 };

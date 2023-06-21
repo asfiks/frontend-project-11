@@ -117,7 +117,7 @@ const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkIn
       openElementLink.classList.replace('fw-bold', 'fw-normal');
       openElementLink.classList.add('link-secondary');
       const link = openElementLink.getAttribute('href');
-      state.uiState.usedLinks.push(link);
+      state.uiState.openedLinks.push(link);
       const [dataForModal] = (state.posts).filter((post) => post.link === link);
       modalTitle.textContent = dataForModal.title;
       modalBodyWithText.textContent = dataForModal.description;
@@ -168,6 +168,12 @@ const renderForUpdate = (state) => {
   renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
 };
 
+const editLink = (element) => {
+  console.log(element);
+  element.classList.replace('fw-bold', 'fw-normal');
+  element.classList.add('link-secondary');
+};
+
 export default (state) => {
   const watchedState = onChange(state, (path, value) => {
     if (path === 'form.valid' && value !== '') {
@@ -199,6 +205,9 @@ export default (state) => {
         default:
           break;
       }
+    }
+    if (path === 'uiState.curentVisitLink') {
+      editLink(state.uiState.curentVisitLink);
     }
   });
   return watchedState;
