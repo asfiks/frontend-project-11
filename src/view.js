@@ -169,15 +169,26 @@ const renderForUpdate = (state) => {
 };
 
 const editLink = (element) => {
-  console.log(element);
   element.classList.replace('fw-bold', 'fw-normal');
   element.classList.add('link-secondary');
 };
 
+const clearFeedBack = () => {
+  const sectionForm = document.querySelector('.bg-dark');
+  const elementFeedback = sectionForm.querySelector('.feedback');
+  if (elementFeedback) {
+    elementFeedback.textContent = '';
+  }
+  return null;
+};
+
 export default (state) => {
   const watchedState = onChange(state, (path, value) => {
-    if (path === 'form.valid' && value !== '') {
+    if (path === 'form.validateStatus') {
       switch (value) {
+        case 'newUrl':
+          clearFeedBack();
+          break;
         case 'thereIsRssInState':
           renderForFeedback('thereIsRss');
           break;

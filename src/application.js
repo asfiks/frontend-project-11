@@ -46,8 +46,7 @@ const getNewPosts = (state) => {
   const result = usedUrls.map((url) => getDataFromURL(url, state)
     .then((data) => {
       if (data === 'error') {
-        state.form.processError = 'errorNetwork';
-        return null;
+        return 'error';
       }
       const dataNormalazed = getNormalizeUpdateData(state, url, data);
       return dataNormalazed;
@@ -58,8 +57,8 @@ const getNewPosts = (state) => {
 
   return Promise.all(result).then((values) => {
     const data = values.flat();
-    if (data.includes(undefined)) {
-      state.form.processError = 'errorNetwork';
+    console.log(data);
+    if (data.includes('error')) {
       return false;
     }
     state.posts = data;
@@ -110,10 +109,11 @@ export default () => {
     const watchedState = viewer(state);
     const form = document.querySelector('.rss-form');
     form.addEventListener('submit', (e) => {
+      watchedState.form.validateStatus = 'newUrl';
       e.preventDefault();
       const url = new FormData(e.target).get('url');
       if (state.uiState.usedUrls.includes(url)) {
-        watchedState.form.valid = 'thereIsRssInState';
+        watchedState.form.validateStatus = 'thereIsRssInState';
         return;
       }
       schema.validate({ website: url })
@@ -128,7 +128,7 @@ export default () => {
                 watchedState.form.processError = 'errorNetwork';
                 break;
               case true:
-                watchedState.form.valid = 'hasRSS';
+                watchedState.form.validateStatus = 'hasRSS';
                 state.form.stateApp = 'processing';
                 watchedState.uiState.currentUrl = url;
                 (watchedState.uiState.usedUrls).push(url);
@@ -137,7 +137,7 @@ export default () => {
                 listenerLinks(watchedState);
                 break;
               case false:
-                watchedState.form.valid = 'noRSS';
+                watchedState.form.validateStatus = 'noRSS';
                 break;
               default:
                 throw new Error(`Unknown dataCheck value: ${dataCheck}`);
@@ -149,13 +149,14 @@ export default () => {
             });
         })
         .catch(() => {
-          watchedState.form.valid = 'noValid';
+          watchedState.form.validateStatus = 'noValid';
           return null;
         });
     });
     const updateData = function updateDataFunction() {
       getNewPosts(watchedState)
         .then((result) => {
+          console.log(result);
           if (result) {
             listenerLinks(watchedState);
           }
