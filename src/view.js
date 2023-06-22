@@ -129,10 +129,6 @@ const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkIn
 const render = (state) => {
   const containerPosts = document.querySelector('.posts');
   const containerFeeds = document.querySelector('.feeds');
-  const containerModal = document.querySelector('.modal');
-  const modalTitle = containerModal.querySelector('.modal-title');
-  const modalBodyWithText = containerModal.querySelector('.modal-body');
-  const linkInModal = containerModal.querySelector('a');
   if ((state.uiState.usedUrls).length === 1 && state.form.stateApp === 'processing') {
     containerPosts.append(createNameLists(i18next.t('posts')));
     containerFeeds.append(createNameLists(i18next.t('feeds')));
@@ -147,26 +143,29 @@ const render = (state) => {
   renderFeed(containerWithListInFeeds, feed);
   const containerWithListInPosts = containerPosts.querySelector('ul');
   renderPosts(containerWithListInPosts, posts);
-  const allButtonView = containerWithListInPosts.querySelectorAll('button');
-  renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
   renderForFeedback('okRSS');
 };
 
 const renderForUpdate = (state) => {
   const containerPosts = document.querySelector('.posts');
-  const containerModal = document.querySelector('.modal');
-  const modalTitle = containerModal.querySelector('.modal-title');
-  const modalBodyWithText = containerModal.querySelector('.modal-body');
-  const linkInModal = containerModal.querySelector('a');
   const containerWithListInPosts = containerPosts.querySelector('ul');
   const { posts } = state;
   while (containerWithListInPosts.firstChild) {
     containerWithListInPosts.removeChild(containerWithListInPosts.firstChild);
   }
   renderPosts(containerWithListInPosts, posts);
-  const allButtonView = containerWithListInPosts.querySelectorAll('button');
-  renderModal(state, allButtonView, modalTitle, modalBodyWithText, linkInModal);
 };
+
+const modalRender = (element, dataForModal, link) => {
+  const containerModal = document.querySelector('.modal');
+  const modalTitle = containerModal.querySelector('.modal-title');
+  const modalBodyWithText = containerModal.querySelector('.modal-body');
+  const linkInModal = containerModal.querySelector('a');
+  modalTitle.textContent = dataForModal.title;
+  modalBodyWithText.textContent = dataForModal.description;
+  linkInModal.setAttribute('href', link);
+  editLink(element);
+}
 
 const editLink = (element) => {
   element.classList.replace('fw-bold', 'fw-normal');

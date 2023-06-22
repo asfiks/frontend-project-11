@@ -20,22 +20,9 @@ const getDataFromURL = (url, state) => {
     .catch(() => 'error');
 };
 
-/* const getDataAfterParsing = (state, url) => getDataFromURL(url, state)
-  .then((data) => {
-    if (data === 'error') {
-      state.form.processError = 'errorNetwork';
-      state.form.stateApp = 'filling';
-    } else {
-      const [currentFeed, currentPosts] = getNormalizeNewData(state, data);
-      state.feeds.unshift(currentFeed);
-      state.posts = currentPosts;
-      state.form.stateApp = 'processed';
-    }
-    return null;
-  }); */
-const getDataForRender = (data, state) => {
+const getDataForRender = (data, state, url) => {
   const feedAndPosts = parser(data);
-  const [currentFeed, currentPosts] = getNormalizeNewData(state, feedAndPosts);
+  const [currentFeed, currentPosts] = getNormalizeNewData(url, feedAndPosts);
   state.feeds.unshift(currentFeed);
   state.posts = currentPosts;
   return null;
@@ -80,6 +67,22 @@ const listenerLinks = (state) => {
   });
 };
 
+const listenerButtonsModal = (state) => {
+  const containerPosts = document.querySelector('.posts');
+  const containerWithListInPosts = containerPosts.querySelector('ul');
+  const allButtonView = containerWithListInPosts.querySelectorAll('button');
+  allButtonView.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const elementWithEvent = event.target.parentNode;
+      const openElementLink = elementWithEvent.querySelector('a');
+      const link = openElementLink.getAttribute('href');
+      state.uiState.openedLinks.push(link);
+      const [dataForModal] = (state.posts).filter((post) => post.link === link);
+      //modalRender(openElementLink, dataForModal, link)
+    });
+  });
+};
+
 export default () => {
   i18next.init({
     lng: 'ru',
@@ -89,7 +92,7 @@ export default () => {
   }).then(() => {
     const state = {
       form: {
-        valid: '',
+        validateStatus: '',
         stateApp: 'filling',
         processError: null,
         errors: [],
@@ -97,7 +100,6 @@ export default () => {
       feeds: [],
       posts: [],
       uiState: {
-        currentUrl: '',
         usedUrls: [],
         openedLinks: [],
         curentVisitLink: null,
@@ -130,11 +132,11 @@ export default () => {
               case true:
                 watchedState.form.validateStatus = 'hasRSS';
                 state.form.stateApp = 'processing';
-                watchedState.uiState.currentUrl = url;
                 (watchedState.uiState.usedUrls).push(url);
-                getDataForRender(data, watchedState);
+                getDataForRender(data, watchedState, url);
                 watchedState.form.stateApp = 'processed';
                 listenerLinks(watchedState);
+                listenerButtonsModal(watchedState)
                 break;
               case false:
                 watchedState.form.validateStatus = 'noRSS';
@@ -145,7 +147,9 @@ export default () => {
             return null;
           })
             .catch((error) => {
-              console.log(error);
+              watchedState.form.processError = 'errorNetwork';
+              console.error(error);
+
             });
         })
         .catch(() => {
@@ -156,7 +160,6 @@ export default () => {
     const updateData = function updateDataFunction() {
       getNewPosts(watchedState)
         .then((result) => {
-          console.log(result);
           if (result) {
             listenerLinks(watchedState);
           }
@@ -165,6 +168,6 @@ export default () => {
           setTimeout(updateData, 5000);
         });
     };
-    updateData();
+    //updateData();
   });
 };

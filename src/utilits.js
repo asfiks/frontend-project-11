@@ -14,8 +14,7 @@ export const hasRSS = (data) => {
   }
 };
 
-export const getNormalizeNewData = (state, data) => {
-  const url = state.uiState.currentUrl;
+export const getNormalizeNewData = (url, data) => {
   const [feed, posts] = data;
   feed.id = url;
   const normalazedPosts = posts.map((post) => {
