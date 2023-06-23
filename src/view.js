@@ -109,7 +109,7 @@ const renderPosts = (containerWithListInPosts, posts) => {
   });
 };
 
-const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
+/* const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
   allButtonView.forEach((button) => {
     button.addEventListener('click', (event) => {
       const elementWithEvent = event.target.parentNode;
@@ -124,12 +124,12 @@ const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkIn
       linkInModal.setAttribute('href', link);
     });
   });
-};
+}; */
 
 const render = (state) => {
   const containerPosts = document.querySelector('.posts');
   const containerFeeds = document.querySelector('.feeds');
-  if ((state.uiState.usedUrls).length === 1 && state.form.stateApp === 'processing') {
+  if ((state.uiState.usedUrls).length === 1 /* && state.form.stateApp === 'rendering' */) {
     containerPosts.append(createNameLists(i18next.t('posts')));
     containerFeeds.append(createNameLists(i18next.t('feeds')));
   }
@@ -143,7 +143,6 @@ const render = (state) => {
   renderFeed(containerWithListInFeeds, feed);
   const containerWithListInPosts = containerPosts.querySelector('ul');
   renderPosts(containerWithListInPosts, posts);
-  renderForFeedback('okRSS');
 };
 
 const renderForUpdate = (state) => {
@@ -156,16 +155,16 @@ const renderForUpdate = (state) => {
   renderPosts(containerWithListInPosts, posts);
 };
 
-const modalRender = (element, dataForModal, link) => {
+const renderModal = (state) => {
+  const data = state.uiState.modalsData;
   const containerModal = document.querySelector('.modal');
   const modalTitle = containerModal.querySelector('.modal-title');
   const modalBodyWithText = containerModal.querySelector('.modal-body');
   const linkInModal = containerModal.querySelector('a');
-  modalTitle.textContent = dataForModal.title;
-  modalBodyWithText.textContent = dataForModal.description;
-  linkInModal.setAttribute('href', link);
-  editLink(element);
-}
+  modalTitle.textContent = data.title;
+  modalBodyWithText.textContent = data.description;
+  linkInModal.setAttribute('href', data.link);
+};
 
 const editLink = (element) => {
   element.classList.replace('fw-bold', 'fw-normal');
@@ -197,6 +196,9 @@ export default (state) => {
         case 'noValid':
           renderForFeedback('noValid');
           break;
+        case 'okRSS':
+          renderForFeedback('okRSS');
+          break;
         default:
           break;
       }
@@ -204,9 +206,24 @@ export default (state) => {
     if (path === 'form.processError' && value === 'errorNetwork') {
       renderForFeedback('errorNetwork');
     }
-    if (path === 'posts') {
+    if (path === 'form.stateApp') {
+      switch (value) {
+        case 'rendering':
+          render(watchedState);
+          break;
+        case 'renderingUpdate':
+          renderForUpdate(watchedState);
+          break;
+        case 'renderModal':
+          renderModal(watchedState);
+          break;
+        default:
+          break;
+      }
+    }
+    /* if (path === 'posts') {
       switch (state.form.stateApp) {
-        case 'processing':
+        case 'rendering':
           render(watchedState);
           break;
         case 'processed':
@@ -215,7 +232,7 @@ export default (state) => {
         default:
           break;
       }
-    }
+    } */
     if (path === 'uiState.curentVisitLink') {
       editLink(state.uiState.curentVisitLink);
     }

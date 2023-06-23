@@ -20,42 +20,6 @@ const getDataFromURL = (url, state) => {
     .catch(() => 'error');
 };
 
-const getDataForRender = (data, state, url) => {
-  const feedAndPosts = parser(data);
-  const [currentFeed, currentPosts] = getNormalizeNewData(url, feedAndPosts);
-  state.feeds.unshift(currentFeed);
-  state.posts = currentPosts;
-  return null;
-};
-
-const getNewPosts = (state) => {
-  const { usedUrls } = state.uiState;
-  const result = usedUrls.map((url) => getDataFromURL(url, state)
-    .then((data) => {
-      if (data === 'error') {
-        return 'error';
-      }
-      const dataNormalazed = getNormalizeUpdateData(state, url, data);
-      return dataNormalazed;
-    })
-    .catch((e) => {
-      throw new Error(e);
-    }));
-
-  return Promise.all(result).then((values) => {
-    const data = values.flat();
-    console.log(data);
-    if (data.includes('error')) {
-      return false;
-    }
-    state.posts = data;
-    return true;
-  })
-    .catch((e) => {
-      state.form.errors.push(e);
-    });
-};
-
 const listenerLinks = (state) => {
   const allLinkInPosts = document.querySelectorAll('a[target="_blank"][rel="noopener noreferrer"]');
   allLinkInPosts.forEach((element) => {
@@ -78,9 +42,49 @@ const listenerButtonsModal = (state) => {
       const link = openElementLink.getAttribute('href');
       state.uiState.openedLinks.push(link);
       const [dataForModal] = (state.posts).filter((post) => post.link === link);
-      //modalRender(openElementLink, dataForModal, link)
+      state.uiState.modalsData = dataForModal;
+      state.uiState.curentVisitLink = openElementLink;
+      state.form.stateApp = 'renderModal';
     });
   });
+};
+
+const getDataForRender = (data, state, url) => {
+  const feedAndPosts = parser(data);
+  const [currentFeed, currentPosts] = getNormalizeNewData(url, feedAndPosts);
+  state.feeds.unshift(currentFeed);
+  state.posts = currentPosts;
+  return null;
+};
+
+const getNewPosts = (state) => {
+  const { usedUrls } = state.uiState;
+  state.form.stateApp = 'parsingData';
+  const result = usedUrls.map((url) => getDataFromURL(url, state)
+    .then((data) => {
+      if (data === 'error') {
+        return 'error';
+      }
+      const dataNormalazed = getNormalizeUpdateData(state, url, data);
+      return dataNormalazed;
+    })
+    .catch((e) => {
+      throw new Error(e);
+    }));
+
+  return Promise.all(result).then((values) => {
+    const data = values.flat();
+    if (data.includes('error')) {
+      state.form.stateApp = 'filling';
+      return false;
+    }
+    state.posts = data;
+    state.form.stateApp = 'renderingUpdate';
+    return true;
+  })
+    .catch((e) => {
+      state.form.errors.push(e);
+    });
 };
 
 export default () => {
@@ -103,6 +107,7 @@ export default () => {
         usedUrls: [],
         openedLinks: [],
         curentVisitLink: null,
+        modalsData: null,
       },
     };
     const schema = yup.object().shape({
@@ -122,38 +127,46 @@ export default () => {
         .then(() => {
           watchedState.form.processError = null;
           const proxyUrl = makeProxyLink(url);
+          watchedState.form.stateApp = 'downloadData';
           axios.get(proxyUrl).then((res) => {
             const data = res.data.contents;
+            watchedState.form.stateApp = 'checkUrl';
             const dataCheck = hasRSS(data);
             switch (dataCheck) {
               case 'errorNetwork':
                 watchedState.form.processError = 'errorNetwork';
+                watchedState.form.stateApp = 'filling';
                 break;
               case true:
                 watchedState.form.validateStatus = 'hasRSS';
-                state.form.stateApp = 'processing';
                 (watchedState.uiState.usedUrls).push(url);
+                watchedState.form.stateApp = 'parsingData';
                 getDataForRender(data, watchedState, url);
-                watchedState.form.stateApp = 'processed';
+                watchedState.form.stateApp = 'rendering';
                 listenerLinks(watchedState);
-                listenerButtonsModal(watchedState)
+                listenerButtonsModal(watchedState);
+                watchedState.form.validateStatus = 'okRSS';
+                watchedState.form.stateApp = 'filling';
                 break;
               case false:
                 watchedState.form.validateStatus = 'noRSS';
+                watchedState.form.stateApp = 'filling';
                 break;
               default:
+                watchedState.form.stateApp = 'filling';
                 throw new Error(`Unknown dataCheck value: ${dataCheck}`);
             }
             return null;
           })
             .catch((error) => {
               watchedState.form.processError = 'errorNetwork';
+              watchedState.form.stateApp = 'filling';
               console.error(error);
-
             });
         })
         .catch(() => {
           watchedState.form.validateStatus = 'noValid';
+          watchedState.form.stateApp = 'filling';
           return null;
         });
     });
@@ -161,13 +174,16 @@ export default () => {
       getNewPosts(watchedState)
         .then((result) => {
           if (result) {
+            console.log(result);
             listenerLinks(watchedState);
+            listenerButtonsModal(watchedState);
+            watchedState.form.stateApp = 'filling';
           }
         })
         .finally(() => {
           setTimeout(updateData, 5000);
         });
     };
-    //updateData();
+    updateData();
   });
 };
