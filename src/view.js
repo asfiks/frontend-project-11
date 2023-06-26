@@ -1,6 +1,17 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 
+const elementButtonAdd = document.querySelector('button[type="submit"]');
+
+const buttonDisabled = (button) => {
+  button.disabled = true;
+  return null;
+};
+const buttonEnabled = (button) => {
+  button.disabled = false;
+  return null;
+};
+
 const getTextDanger = (elementFeedback, elementInput, text) => {
   try {
     elementFeedback.textContent = text;
@@ -167,9 +178,6 @@ export default (state) => {
   const watchedState = onChange(state, (path, value) => {
     if (path === 'form.validateStatus') {
       switch (value) {
-        case 'newUrl':
-          clearFeedBack();
-          break;
         case 'thereIsRssInState':
           renderForFeedback('thereIsRss');
           break;
@@ -191,6 +199,13 @@ export default (state) => {
     }
     if (path === 'form.stateApp') {
       switch (value) {
+        case 'filling':
+          buttonEnabled(elementButtonAdd);
+          break;
+        case 'checkNewUrl':
+          clearFeedBack();
+          buttonDisabled(elementButtonAdd);
+          break;
         case 'rendering':
           render(watchedState);
           break;
@@ -199,6 +214,15 @@ export default (state) => {
           break;
         case 'renderModal':
           renderModal(watchedState);
+          break;
+        default:
+          break;
+      }
+    }
+    if (path === 'stateUpdate') {
+      switch (value) {
+        case 'renderingUpdate':
+          renderForUpdate(watchedState);
           break;
         default:
           break;

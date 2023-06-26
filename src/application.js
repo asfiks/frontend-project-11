@@ -59,10 +59,10 @@ const getDataForRender = (data, state, url) => {
 
 const getNewPosts = (state) => {
   const { usedUrls } = state.uiState;
-  state.form.stateApp = 'parsingData';
+  state.stateUpdate = 'parsingData';
   const result = usedUrls.map((url) => getDataFromURL(url, state)
     .then((data) => {
-      if (data === 'error') {
+      if (data === 'noRSS') {
         return 'error';
       }
       const dataNormalazed = getNormalizeUpdateData(state, url, data);
@@ -74,12 +74,12 @@ const getNewPosts = (state) => {
 
   return Promise.all(result).then((values) => {
     const data = values.flat();
-    if (data.includes('error')) {
-      state.form.stateApp = 'filling';
+    if (data.includes('error') || data.length === 0) {
+      state.stateUpdate = 'filling';
       return false;
     }
     state.posts = data;
-    state.form.stateApp = 'renderingUpdate';
+    state.stateUpdate = 'renderingUpdate';
     return true;
   })
     .catch((e) => {
@@ -101,6 +101,7 @@ export default () => {
         processError: null,
         errors: [],
       },
+      stateUpdate: 'filling',
       feeds: [],
       posts: [],
       uiState: {
@@ -116,11 +117,13 @@ export default () => {
     const watchedState = viewer(state);
     const form = document.querySelector('.rss-form');
     form.addEventListener('submit', (e) => {
-      watchedState.form.validateStatus = 'newUrl';
+      watchedState.form.validateStatus = '';
+      watchedState.form.stateApp = 'checkNewUrl';
       e.preventDefault();
       const url = new FormData(e.target).get('url');
       if (state.uiState.usedUrls.includes(url)) {
         watchedState.form.validateStatus = 'thereIsRssInState';
+        watchedState.form.stateApp = 'filling';
         return;
       }
       schema.validate({ website: url })
@@ -162,15 +165,13 @@ export default () => {
         });
     });
     const updateData = function updateDataFunction() {
-      getNewPosts(watchedState)
-        .then((result) => {
-          if (result) {
-            console.log(result);
-            listenerLinks(watchedState);
-            listenerButtonsModal(watchedState);
-            watchedState.form.stateApp = 'filling';
-          }
-        })
+      getNewPosts(watchedState).then((result) => {
+        if (result) {
+          listenerLinks(watchedState);
+          listenerButtonsModal(watchedState);
+          watchedState.stateUpdate = 'filling';
+        }
+      })
         .finally(() => {
           setTimeout(updateData, 5000);
         });
