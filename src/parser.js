@@ -12,6 +12,9 @@ const getDataFromItem = (item) => {
 export default (data) => {
   try {
     const dom = parser.parseFromString(data, 'application/xml');
+    if (dom.getElementsByTagName('parsererror').length > 0) {
+      return 'noRSS';
+    }
     const titleTextForFeed = dom.querySelector('channel > title').textContent;
     const descriptionForFeed = dom.querySelector('channel > description').textContent;
     const linkForFeed = dom.querySelector('channel > link').textContent;
@@ -25,6 +28,6 @@ export default (data) => {
     const itemData = itemsArr.map((item) => getDataFromItem(item));
     return [feed, itemData];
   } catch {
-    throw new Error();
+    return 'parserError';
   }
 };

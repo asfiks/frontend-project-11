@@ -4,7 +4,7 @@ import axios from 'axios';
 import viewer from './view.js';
 import texts from './locales/texts.js';
 import parser from './parser.js';
-import { hasRSS, getNormalizeNewData, getNormalizeUpdateData } from './utilits.js';
+import { getNormalizeNewData, getNormalizeUpdateData } from './utilits.js';
 
 export const makeProxyLink = (url) => {
   const proxy = new URL('/get', 'https://allorigins.hexlet.app');
@@ -130,33 +130,24 @@ export default () => {
           watchedState.form.stateApp = 'downloadData';
           axios.get(proxyUrl).then((res) => {
             const data = res.data.contents;
-            watchedState.form.stateApp = 'checkUrl';
-            const dataCheck = hasRSS(data);
-            switch (dataCheck) {
-              case 'errorNetwork':
-                watchedState.form.processError = 'errorNetwork';
-                watchedState.form.stateApp = 'filling';
-                break;
-              case true:
-                watchedState.form.validateStatus = 'hasRSS';
-                (watchedState.uiState.usedUrls).push(url);
-                watchedState.form.stateApp = 'parsingData';
-                getDataForRender(data, watchedState, url);
-                watchedState.form.stateApp = 'rendering';
-                listenerLinks(watchedState);
-                listenerButtonsModal(watchedState);
-                watchedState.form.validateStatus = 'okRSS';
-                watchedState.form.stateApp = 'filling';
-                break;
-              case false:
-                watchedState.form.validateStatus = 'noRSS';
-                watchedState.form.stateApp = 'filling';
-                break;
-              default:
-                watchedState.form.stateApp = 'filling';
-                throw new Error(`Unknown dataCheck value: ${dataCheck}`);
+            const feedAndPosts = parser(data);
+            if (feedAndPosts === 'noRSS') {
+              watchedState.form.validateStatus = 'noRSS';
+              watchedState.form.stateApp = 'filling';
+            } else {
+              const [currentFeed, currentPosts] = getNormalizeNewData(url, feedAndPosts);
+              state.feeds.unshift(currentFeed);
+              state.posts = currentPosts;
+              watchedState.form.validateStatus = 'hasRSS';
+              (watchedState.uiState.usedUrls).push(url);
+              watchedState.form.stateApp = 'parsingData';
+              getDataForRender(data, watchedState, url);
+              watchedState.form.stateApp = 'rendering';
+              listenerLinks(watchedState);
+              listenerButtonsModal(watchedState);
+              watchedState.form.validateStatus = 'okRSS';
+              watchedState.form.stateApp = 'filling';
             }
-            return null;
           })
             .catch((error) => {
               watchedState.form.processError = 'errorNetwork';

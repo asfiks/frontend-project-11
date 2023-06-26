@@ -109,27 +109,10 @@ const renderPosts = (containerWithListInPosts, posts) => {
   });
 };
 
-/* const renderModal = (state, allButtonView, modalTitle, modalBodyWithText, linkInModal) => {
-  allButtonView.forEach((button) => {
-    button.addEventListener('click', (event) => {
-      const elementWithEvent = event.target.parentNode;
-      const openElementLink = elementWithEvent.querySelector('a');
-      openElementLink.classList.replace('fw-bold', 'fw-normal');
-      openElementLink.classList.add('link-secondary');
-      const link = openElementLink.getAttribute('href');
-      state.uiState.openedLinks.push(link);
-      const [dataForModal] = (state.posts).filter((post) => post.link === link);
-      modalTitle.textContent = dataForModal.title;
-      modalBodyWithText.textContent = dataForModal.description;
-      linkInModal.setAttribute('href', link);
-    });
-  });
-}; */
-
 const render = (state) => {
   const containerPosts = document.querySelector('.posts');
   const containerFeeds = document.querySelector('.feeds');
-  if ((state.uiState.usedUrls).length === 1 /* && state.form.stateApp === 'rendering' */) {
+  if ((state.uiState.usedUrls).length === 1) {
     containerPosts.append(createNameLists(i18next.t('posts')));
     containerFeeds.append(createNameLists(i18next.t('feeds')));
   }
@@ -221,18 +204,6 @@ export default (state) => {
           break;
       }
     }
-    /* if (path === 'posts') {
-      switch (state.form.stateApp) {
-        case 'rendering':
-          render(watchedState);
-          break;
-        case 'processed':
-          renderForUpdate(watchedState);
-          break;
-        default:
-          break;
-      }
-    } */
     if (path === 'uiState.curentVisitLink') {
       editLink(state.uiState.curentVisitLink);
     }

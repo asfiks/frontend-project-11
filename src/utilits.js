@@ -1,8 +1,8 @@
 import { uniqueId } from 'lodash';
 
-const parser = new DOMParser();
+/* const parser = new DOMParser();
 
-export const hasRSS = (data) => {
+ export const hasRSS = (data) => {
   try {
     const dom = parser.parseFromString(data, 'application/xml');
     if (dom.getElementsByTagName('parsererror').length > 0) {
@@ -12,7 +12,7 @@ export const hasRSS = (data) => {
   } catch {
     return 'errorNetwork';
   }
-};
+}; */
 
 export const getNormalizeNewData = (url, data) => {
   const [feed, posts] = data;
