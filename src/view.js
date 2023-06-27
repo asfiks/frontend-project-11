@@ -150,7 +150,12 @@ const renderForUpdate = (state) => {
 };
 
 const renderModal = (state) => {
-  const data = state.uiState.modalsData;
+  const link = state.uiState.curentVisitElement;
+  const openedElement = document.querySelector(`a[href="${link}"]`);
+  console.log(openedElement)
+  editLink(openedElement)
+  console.log(openedElement)
+  const [data] = (state.posts).filter((post) => post.link === link);
   const containerModal = document.querySelector('.modal');
   const modalTitle = containerModal.querySelector('.modal-title');
   const modalBodyWithText = containerModal.querySelector('.modal-body');
@@ -228,9 +233,9 @@ export default (state) => {
           break;
       }
     }
-    if (path === 'uiState.curentVisitLink') {
-      editLink(state.uiState.curentVisitLink);
-    }
+/*     if (path === 'uiState.curentVisitElement') {
+      editLink(state.uiState.curentVisitElement);
+    } */
   });
   return watchedState;
 };

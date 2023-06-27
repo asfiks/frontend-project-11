@@ -26,7 +26,7 @@ const listenerLinks = (state) => {
     element.addEventListener('click', (event) => {
       const link = (event.target).getAttribute('href');
       state.uiState.openedLinks.push(link);
-      state.uiState.curentVisitLink = element;
+      state.uiState.curentVisitElement = element;
     });
   });
 };
@@ -41,13 +41,15 @@ const listenerButtonsModal = (state) => {
       const openElementLink = elementWithEvent.querySelector('a');
       const link = openElementLink.getAttribute('href');
       state.uiState.openedLinks.push(link);
-      const [dataForModal] = (state.posts).filter((post) => post.link === link);
-      state.uiState.modalsData = dataForModal;
-      state.uiState.curentVisitLink = openElementLink;
+      state.uiState.curentVisitElement = link;
+      //const [dataForModal] = (state.posts).filter((post) => post.link === link);
+      //state.uiState.modalsData = dataForModal;
+      
       state.form.stateApp = 'renderModal';
     });
   });
 };
+
 
 const getDataForRender = (data, state, url) => {
   const feedAndPosts = parser(data);
@@ -107,7 +109,7 @@ export default () => {
       uiState: {
         usedUrls: [],
         openedLinks: [],
-        curentVisitLink: null,
+        curentVisitElement: null,
         modalsData: null,
       },
     };
