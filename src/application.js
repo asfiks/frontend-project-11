@@ -26,7 +26,7 @@ const listenerLinks = (state) => {
     element.addEventListener('click', (event) => {
       const link = (event.target).getAttribute('href');
       state.uiState.openedLinks.push(link);
-      state.uiState.curentVisitElement = element;
+      state.uiState.curentVisitLink = link;
     });
   });
 };
@@ -37,19 +37,16 @@ const listenerButtonsModal = (state) => {
   const allButtonView = containerWithListInPosts.querySelectorAll('button');
   allButtonView.forEach((button) => {
     button.addEventListener('click', (event) => {
+      state.stateUpdate = 'waiting';
       const elementWithEvent = event.target.parentNode;
       const openElementLink = elementWithEvent.querySelector('a');
       const link = openElementLink.getAttribute('href');
       state.uiState.openedLinks.push(link);
-      state.uiState.curentVisitElement = link;
-      //const [dataForModal] = (state.posts).filter((post) => post.link === link);
-      //state.uiState.modalsData = dataForModal;
-      
-      state.form.stateApp = 'renderModal';
+      state.uiState.curentVisitLink = link;
+      state.stateUpdate = 'renderModal';
     });
   });
 };
-
 
 const getDataForRender = (data, state, url) => {
   const feedAndPosts = parser(data);
@@ -109,7 +106,7 @@ export default () => {
       uiState: {
         usedUrls: [],
         openedLinks: [],
-        curentVisitElement: null,
+        curentVisitLink: null,
         modalsData: null,
       },
     };

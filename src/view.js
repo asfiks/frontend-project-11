@@ -150,11 +150,7 @@ const renderForUpdate = (state) => {
 };
 
 const renderModal = (state) => {
-  const link = state.uiState.curentVisitElement;
-  const openedElement = document.querySelector(`a[href="${link}"]`);
-  console.log(openedElement)
-  editLink(openedElement)
-  console.log(openedElement)
+  const link = state.uiState.curentVisitLink;
   const [data] = (state.posts).filter((post) => post.link === link);
   const containerModal = document.querySelector('.modal');
   const modalTitle = containerModal.querySelector('.modal-title');
@@ -165,9 +161,10 @@ const renderModal = (state) => {
   linkInModal.setAttribute('href', data.link);
 };
 
-const editLink = (element) => {
-  element.classList.replace('fw-bold', 'fw-normal');
-  element.classList.add('link-secondary');
+const editLink = (link) => {
+  const openedElement = document.querySelector(`a[href="${link}"]`);
+  openedElement.classList.replace('fw-bold', 'fw-normal');
+  openedElement.classList.add('link-secondary');
 };
 
 const clearFeedBack = () => {
@@ -229,13 +226,16 @@ export default (state) => {
         case 'renderingUpdate':
           renderForUpdate(watchedState);
           break;
+        case 'renderModal':
+          renderModal(watchedState);
+          break;
         default:
           break;
       }
     }
-/*     if (path === 'uiState.curentVisitElement') {
-      editLink(state.uiState.curentVisitElement);
-    } */
+    if (path === 'uiState.curentVisitLink') {
+      editLink(state.uiState.curentVisitLink);
+    }
   });
   return watchedState;
 };
